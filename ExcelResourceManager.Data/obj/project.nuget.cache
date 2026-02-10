@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "yOppBlT7knY=",
+  "dgSpecHash": "PjYEHski+NE=",
   "success": true,
   "projectFilePath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj",
   "expectedPackageFiles": [
-    "/home/runner/.nuget/packages/litedb/5.0.19/litedb.5.0.19.nupkg.sha512"
+    "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages/litedb/5.0.19/litedb.5.0.19.nupkg.sha512",
+    "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages/microsoft.netcore.app.ref/8.0.23/microsoft.netcore.app.ref.8.0.23.nupkg.sha512",
+    "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/8.0.23/microsoft.aspnetcore.app.ref.8.0.23.nupkg.sha512"
   ],
   "logs": []
 }
