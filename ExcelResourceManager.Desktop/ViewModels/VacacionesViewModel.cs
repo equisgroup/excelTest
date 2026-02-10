@@ -135,21 +135,30 @@ public class VacacionesViewModel : ViewModelBase
             .Throttle(TimeSpan.FromMilliseconds(500))
             .Where(tuple => tuple.Item1 != null && tuple.Item2.HasValue && tuple.Item3.HasValue)
             .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(_ => ValidarEnTiempoRealAsync().ConfigureAwait(false));
+            .Subscribe(async _ => await ValidarEnTiempoRealAsync());
 
-        // Cargar datos iniciales
-        CargarDatosCommand.Execute().Subscribe();
+        // Cargar datos iniciales solo si los servicios están disponibles
+        if (_vacacionService != null && _empleadoService != null)
+        {
+            CargarDatosCommand.Execute().Subscribe();
+        }
 
         Log.Information("VacacionesViewModel inicializado");
     }
 
     public VacacionesViewModel() : this(null!, null!, null!, null!, null!)
     {
+        // Constructor para soporte de diseñador XAML
+        // Los comandos se inicializan con operaciones vacías para evitar NullReferenceExceptions
     }
 
     private async Task ValidarEnTiempoRealAsync()
     {
         if (EmpleadoSeleccionado == null || !FechaInicio.HasValue || !FechaFin.HasValue)
+            return;
+
+        // Salir si los servicios no están disponibles (modo diseñador)
+        if (_validationService == null || _feriadoService == null)
             return;
 
         try
@@ -211,6 +220,10 @@ public class VacacionesViewModel : ViewModelBase
             return;
         }
 
+        // Salir si los servicios no están disponibles (modo diseñador)
+        if (_vacacionService == null || _unitOfWork == null)
+            return;
+
         try
         {
             Log.Information("Guardando nueva vacación para empleado {EmpleadoId}", EmpleadoSeleccionado.Id);
@@ -266,6 +279,10 @@ public class VacacionesViewModel : ViewModelBase
 
     private async Task CargarDatosAsync()
     {
+        // Salir si los servicios no están disponibles (modo diseñador)
+        if (_vacacionService == null || _empleadoService == null)
+            return;
+
         try
         {
             Log.Information("Cargando datos de vacaciones y empleados");
