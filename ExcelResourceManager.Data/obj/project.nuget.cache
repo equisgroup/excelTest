@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "yOppBlT7knY=",
+  "success": true,
+  "projectFilePath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj",
+  "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/litedb/5.0.19/litedb.5.0.19.nupkg.sha512"
+  ],
+  "logs": []
+}
