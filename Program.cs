@@ -79,10 +79,10 @@ public class Program
             
             // Resumen final
             Console.WriteLine("📋 RESUMEN DEL ARCHIVO GENERADO:");
-            Console.WriteLine("  • 12 hojas de trabajo completamente funcionales");
+            Console.WriteLine("  • 11 hojas de trabajo completamente funcionales");
             Console.WriteLine("  • Dashboards interactivos con KPIs dinámicos");
-            Console.WriteLine("  • Sistema de alertas automáticas con análisis");
-            Console.WriteLine("  • Detección de conflictos con fórmulas dinámicas");
+            Console.WriteLine("  • Sistema de alertas COMPLETAMENTE DINÁMICO");
+            Console.WriteLine("  • Detección de conflictos con fórmulas que se actualizan automáticamente");
             Console.WriteLine("  • 52 turnos de soporte para todo 2026");
             Console.WriteLine("  • Tablas con filtros y formato condicional");
             Console.WriteLine("  • Control completo de empleados y asignaciones");

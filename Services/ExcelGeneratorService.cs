@@ -28,9 +28,6 @@ public class ExcelGeneratorService
             Console.WriteLine("  Creando hoja: Dashboard Gerencial...");
             CrearDashboardGerencial(workbook, data, alertas);
             
-            Console.WriteLine("  Creando hoja: Alertas...");
-            CrearHojaAlertas(workbook, alertas, data);
-            
             Console.WriteLine("  Creando hoja: Análisis de Alertas...");
             CrearHojaAnalisisAlertas(workbook, data);
             
@@ -104,10 +101,22 @@ public class ExcelGeneratorService
         
         row += 3;
         
-        // Segunda fila de KPIs - Usar fórmulas COUNTIF que referencian hoja de alertas
-        CrearKPIConFormula(ws, "B", row, "Alertas Alta Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Alta\")");
-        CrearKPIConFormula(ws, "C", row, "Alertas Media Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Media\")");
-        CrearKPIConFormula(ws, "D", row, "Alertas Baja Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Baja\")");
+        // Segunda fila de KPIs - Calcular alertas dinámicamente desde las hojas de conflictos
+        // Las alertas ahora se calculan sumando los conflictos detectados en cada hoja
+        
+        // Alertas Alta Prioridad: Vacaciones con conflictos + Viajes con conflictos de soporte
+        // Fórmula: suma de conflictos en Vacaciones (columnas G y H) y conflictos críticos en Asignaciones
+        CrearKPIConFormula(ws, "B", row, "Conflictos Críticos", 
+            "=SUMPRODUCT(('🏖️ Vacaciones'!G:G>0)*1)+SUMPRODUCT(('🏖️ Vacaciones'!H:H>0)*1)+SUMPRODUCT(('🔄 Asignaciones'!H:H>2)*1)");
+        
+        // Alertas Media Prioridad: Viajes con conflictos de soporte
+        CrearKPIConFormula(ws, "C", row, "Conflictos Medios", 
+            "=SUMPRODUCT(('✈️ Viajes'!M:M>0)*1)");
+        
+        // Alertas informativas: Feriados detectados
+        CrearKPIConFormula(ws, "D", row, "Feriados en Períodos", 
+            "=SUMPRODUCT(('🏖️ Vacaciones'!I:I>0)*1)+SUMPRODUCT(('✈️ Viajes'!K:K>0)*1)");
+        
         CrearKPIConFormula(ws, "E", row, "Viajes Planificados", "=COUNTIF('✈️ Viajes'!J:J,\"Planificado\")");
         
         row += 3;
@@ -253,7 +262,7 @@ public class ExcelGeneratorService
     
     private void CrearHojaAnalisisAlertas(XLWorkbook workbook, DataContainer data)
     {
-        var ws = workbook.Worksheets.Add("📈 Análisis Alertas");
+        var ws = workbook.Worksheets.Add("🚨 Alertas y Conflictos");
         
         // Título
         ws.Cell("A1").Value = "ANÁLISIS DINÁMICO DE ALERTAS Y CONFLICTOS";
@@ -268,19 +277,20 @@ public class ExcelGeneratorService
         int row = 3;
         
         // Sección 1: Resumen de conflictos por empleado
-        ws.Cell($"A{row}").Value = "CONFLICTOS POR EMPLEADO";
-        ws.Range($"A{row}:F{row}").Merge().Style
+        ws.Cell($"A{row}").Value = "CONFLICTOS POR EMPLEADO (ACTUALIZACIÓN AUTOMÁTICA)";
+        ws.Range($"A{row}:G{row}").Merge().Style
             .Font.SetBold().Font.SetFontSize(12)
             .Fill.SetBackgroundColor(XLColor.LightBlue);
         
         row++;
         ws.Cell($"A{row}").Value = "Empleado";
-        ws.Cell($"B{row}").Value = "Total Alertas";
-        ws.Cell($"C{row}").Value = "Alertas Alta";
-        ws.Cell($"D{row}").Value = "Alertas Media";
-        ws.Cell($"E{row}").Value = "Alertas Baja";
-        ws.Cell($"F{row}").Value = "Estado";
-        ws.Range($"A{row}:F{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
+        ws.Cell($"B{row}").Value = "Vacaciones vs Viajes";
+        ws.Cell($"C{row}").Value = "Vacaciones vs Soporte";
+        ws.Cell($"D{row}").Value = "Viajes vs Soporte";
+        ws.Cell($"E{row}").Value = "Asignación Conflictos";
+        ws.Cell($"F{row}").Value = "Total Conflictos";
+        ws.Cell($"G{row}").Value = "Estado";
+        ws.Range($"A{row}:G{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
         
         row++;
         int startRow = row;
@@ -290,20 +300,23 @@ public class ExcelGeneratorService
             var nombreCompleto = $"{empleado.Nombre} {empleado.Apellido}";
             ws.Cell($"A{row}").Value = nombreCompleto;
             
-            // Fórmula para contar total de alertas de este empleado
-            ws.Cell($"B{row}").FormulaA1 = $"=COUNTIF('🚨 Alertas'!$D:$D,A{row})";
+            // Contar conflictos de Vacaciones vs Viajes (columna G en Vacaciones)
+            ws.Cell($"B{row}").FormulaA1 = $"=SUMPRODUCT(('🏖️ Vacaciones'!$B:$B=A{row})*('🏖️ Vacaciones'!$G:$G>0)*1)";
             
-            // Fórmula para contar alertas de nivel Alto
-            ws.Cell($"C{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Alta\")";
+            // Contar conflictos de Vacaciones vs Soporte (columna H en Vacaciones)
+            ws.Cell($"C{row}").FormulaA1 = $"=SUMPRODUCT(('🏖️ Vacaciones'!$B:$B=A{row})*('🏖️ Vacaciones'!$H:$H>0)*1)";
             
-            // Fórmula para contar alertas de nivel Medio
-            ws.Cell($"D{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Media\")";
+            // Contar conflictos de Viajes vs Soporte (columna M en Viajes)
+            ws.Cell($"D{row}").FormulaA1 = $"=SUMPRODUCT(('✈️ Viajes'!$B:$B=A{row})*('✈️ Viajes'!$M:$M>0)*1)";
             
-            // Fórmula para contar alertas de nivel Bajo
-            ws.Cell($"E{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Baja\")";
+            // Contar conflictos en Asignaciones (columnas H e I)
+            ws.Cell($"E{row}").FormulaA1 = $"=SUMPRODUCT(('🔄 Asignaciones'!$B:$B=A{row})*(('🔄 Asignaciones'!$H:$H>0)+('🔄 Asignaciones'!$I:$I>0))*1)";
             
-            // Fórmula para determinar estado
-            ws.Cell($"F{row}").FormulaA1 = $"=IF(C{row}>0,\"⚠️ CRÍTICO\",IF(D{row}>0,\"⚡ REVISAR\",IF(B{row}>0,\"ℹ️ OK\",\"✅ SIN ALERTAS\")))";
+            // Total de conflictos
+            ws.Cell($"F{row}").FormulaA1 = $"=B{row}+C{row}+D{row}+E{row}";
+            
+            // Fórmula para determinar estado basado en severidad
+            ws.Cell($"G{row}").FormulaA1 = $"=IF(C{row}>0,\"🔴 CRÍTICO\",IF(B{row}>0,\"🟡 URGENTE\",IF(F{row}>0,\"🔵 REVISAR\",\"✅ OK\")))";
             
             row++;
         }
@@ -311,56 +324,88 @@ public class ExcelGeneratorService
         // Crear tabla
         if (row > startRow)
         {
-            var tabla = ws.Range($"A{startRow - 1}:F{row - 1}").CreateTable();
+            var tabla = ws.Range($"A{startRow - 1}:G{row - 1}").CreateTable();
             tabla.Theme = XLTableTheme.TableStyleMedium9;
         }
         
         row += 2;
         
-        // Sección 2: Resumen de tipos de conflictos
-        ws.Cell($"A{row}").Value = "RESUMEN POR TIPO DE CONFLICTO";
+        // Sección 2: Resumen general de conflictos
+        ws.Cell($"A{row}").Value = "RESUMEN GENERAL DE CONFLICTOS";
         ws.Range($"A{row}:C{row}").Merge().Style
             .Font.SetBold().Font.SetFontSize(12)
             .Fill.SetBackgroundColor(XLColor.LightBlue);
         
         row++;
         ws.Cell($"A{row}").Value = "Tipo de Conflicto";
-        ws.Cell($"B{row}").Value = "Total";
-        ws.Cell($"C{row}").Value = "% del Total";
+        ws.Cell($"B{row}").Value = "Total Detectado";
+        ws.Cell($"C{row}").Value = "Severidad";
         ws.Range($"A{row}:C{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
         
         row++;
-        var tiposConflicto = new[] { "VacacionViaje", "VacacionSoporte", "ViajeSoporte", "ViajeEnFeriado", "VacacionConFeriado", "AsignacionMultiple" };
-        var nombresTipos = new Dictionary<string, string>
-        {
-            { "VacacionViaje", "Vacaciones vs Viajes" },
-            { "VacacionSoporte", "Vacaciones vs Soporte" },
-            { "ViajeSoporte", "Viaje vs Soporte" },
-            { "ViajeEnFeriado", "Viaje en Feriado" },
-            { "VacacionConFeriado", "Vacaciones con Feriado" },
-            { "AsignacionMultiple", "Asignaciones Múltiples" }
-        };
+        int summaryStart = row;
         
-        foreach (var tipo in tiposConflicto)
-        {
-            ws.Cell($"A{row}").Value = nombresTipos[tipo];
-            ws.Cell($"B{row}").FormulaA1 = $"=COUNTIF('🚨 Alertas'!$B:$B,\"{tipo}\")";
-            ws.Cell($"C{row}").FormulaA1 = $"=IF(SUM($B$2:$B$100)>0,B{row}/SUM($B$2:$B$100),0)";
-            ws.Cell($"C{row}").Style.NumberFormat.Format = "0.0%";
-            row++;
-        }
+        // Vacaciones vs Viajes
+        ws.Cell($"A{row}").Value = "Vacaciones vs Viajes";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('🏖️ Vacaciones'!$G:$G>0)*1)";
+        ws.Cell($"C{row}").Value = "🔴 Alta";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.Red);
+        row++;
+        
+        // Vacaciones vs Soporte
+        ws.Cell($"A{row}").Value = "Vacaciones vs Soporte";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('🏖️ Vacaciones'!$H:$H>0)*1)";
+        ws.Cell($"C{row}").Value = "🔴 Alta";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.Red);
+        row++;
+        
+        // Viajes vs Soporte
+        ws.Cell($"A{row}").Value = "Viajes vs Soporte";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('✈️ Viajes'!$M:$M>0)*1)";
+        ws.Cell($"C{row}").Value = "🟡 Media";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.Yellow);
+        row++;
+        
+        // Asignaciones con Conflictos
+        ws.Cell($"A{row}").Value = "Asignaciones con Conflictos";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('🔄 Asignaciones'!$H:$H>0)*1)+SUMPRODUCT(('🔄 Asignaciones'!$I:$I>0)*1)";
+        ws.Cell($"C{row}").Value = "🟡 Media";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.Yellow);
+        row++;
+        
+        // Viajes en Feriados
+        ws.Cell($"A{row}").Value = "Viajes en Feriados";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('✈️ Viajes'!$K:$K>0)*1)";
+        ws.Cell($"C{row}").Value = "🔵 Baja";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.LightBlue);
+        row++;
+        
+        // Vacaciones en Feriados
+        ws.Cell($"A{row}").Value = "Vacaciones en Feriados";
+        ws.Cell($"B{row}").FormulaA1 = "=SUMPRODUCT(('🏖️ Vacaciones'!$I:$I>0)*1)";
+        ws.Cell($"C{row}").Value = "🔵 Baja";
+        ws.Cell($"C{row}").Style.Fill.SetBackgroundColor(XLColor.LightBlue);
+        row++;
+        
+        // Crear tabla resumen
+        var tablaResumen = ws.Range($"A{summaryStart - 1}:C{row - 1}").CreateTable();
+        tablaResumen.Theme = XLTableTheme.TableStyleMedium2;
         
         row += 2;
         
-        // Instrucciones para actualizar
-        ws.Cell($"A{row}").Value = "💡 NOTA: Esta hoja se actualiza automáticamente basándose en los datos de la hoja '🚨 Alertas'.";
-        ws.Range($"A{row}:F{row}").Merge().Style
-            .Font.SetItalic()
-            .Fill.SetBackgroundColor(XLColor.LightYellow);
+        // Instrucciones
+        ws.Cell($"A{row}").Value = "✅ ESTA HOJA SE ACTUALIZA AUTOMÁTICAMENTE";
+        ws.Range($"A{row}:G{row}").Merge().Style
+            .Font.SetBold()
+            .Fill.SetBackgroundColor(XLColor.LightGreen);
         
         row++;
-        ws.Cell($"A{row}").Value = "Para refrescar las validaciones, vuelva a ejecutar el programa o modifique manualmente los datos.";
-        ws.Range($"A{row}:F{row}").Merge().Style.Font.SetItalic();
+        ws.Cell($"A{row}").Value = "Los conflictos se detectan dinámicamente basándose en fórmulas que analizan las hojas de Vacaciones, Viajes, Asignaciones y Turnos de Soporte.";
+        ws.Range($"A{row}:G{row}").Merge().Style.Font.SetItalic();
+        
+        row++;
+        ws.Cell($"A{row}").Value = "Al agregar o modificar datos en cualquier hoja, esta vista de alertas se actualiza automáticamente.";
+        ws.Range($"A{row}:G{row}").Merge().Style.Font.SetItalic();
         
         ws.Columns().AdjustToContents();
     }
@@ -949,8 +994,7 @@ public class ExcelGeneratorService
         var hojas = new[]
         {
             "📊 Dashboard Gerencial - KPIs y métricas principales con fórmulas dinámicas",
-            "🚨 Alertas - Sistema de alertas y conflictos detectados",
-            "📈 Análisis Alertas - Análisis dinámico de conflictos por empleado y tipo",
+            "🚨 Alertas y Conflictos - Detección automática y dinámica de conflictos",
             "👥 Clientes - Listado completo de clientes (editable)",
             "👨‍💼 Empleados - Listado completo de empleados (editable)",
             "🔄 Asignaciones - Historial con detección automática de conflictos",
