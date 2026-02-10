@@ -126,11 +126,11 @@ public class SampleDataGenerator
         var turnos = new List<TurnoSoporte>();
         int id = 1;
         
-        // Generar turnos semanales para 2026 (primera mitad del año)
+        // Generar turnos semanales para TODO 2026 (52 semanas completas)
         var fechaInicio = new DateTime(2026, 1, 5); // Primera semana de 2026
         var empleadosRotacion = empleados.ToList(); // Usar todos los empleados para rotación
         
-        for (int semana = 1; semana <= 26; semana++)
+        for (int semana = 1; semana <= 52; semana++)
         {
             var empleadoIndex = (semana - 1) % empleadosRotacion.Count;
             var empleado = empleadosRotacion[empleadoIndex];

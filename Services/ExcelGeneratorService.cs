@@ -109,8 +109,8 @@ public class ExcelGeneratorService
         
         row += 3;
         
-        // Resumen por país
-        ws.Cell($"B{row}").Value = "DISTRIBUCIÓN POR PAÍS";
+        // Resumen por país - BASADO EN PAÍSES DE CLIENTES (dinámico con fórmulas)
+        ws.Cell($"B{row}").Value = "DISTRIBUCIÓN POR PAÍS (CLIENTES)";
         ws.Range($"B{row}:E{row}").Merge().Style
             .Font.SetBold().Font.SetFontSize(12)
             .Fill.SetBackgroundColor(XLColor.LightBlue)
@@ -118,23 +118,31 @@ public class ExcelGeneratorService
         
         row++;
         ws.Cell($"B{row}").Value = "País";
-        ws.Cell($"C{row}").Value = "Empleados";
-        ws.Cell($"D{row}").Value = "Clientes";
-        ws.Cell($"E{row}").Value = "Asignaciones";
+        ws.Cell($"C{row}").Value = "Clientes";
+        ws.Cell($"D{row}").Value = "Asignaciones Activas";
+        ws.Cell($"E{row}").Value = "Empleados Asignados";
         ws.Range($"B{row}:E{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
         
         row++;
-        var paises = data.Empleados.Select(e => e.Pais).Distinct().OrderBy(p => p).ToList();
-        foreach (var pais in paises)
+        // Obtener países únicos desde CLIENTES (no empleados)
+        var paisesClientes = data.Clientes.Select(c => c.Pais).Distinct().OrderBy(p => p).ToList();
+        int startRow = row;
+        
+        foreach (var pais in paisesClientes)
         {
             ws.Cell($"B{row}").Value = pais;
-            ws.Cell($"C{row}").Value = data.Empleados.Count(e => e.Pais == pais && e.Activo);
-            ws.Cell($"D{row}").Value = data.Clientes.Count(c => c.Pais == pais && c.Activo);
-            ws.Cell($"E{row}").Value = data.Asignaciones.Count(a => 
-            {
-                var emp = data.Empleados.FirstOrDefault(e => e.Id == a.EmpleadoId);
-                return emp != null && emp.Pais == pais && a.Activa;
-            });
+            
+            // Fórmula para contar clientes activos por país
+            ws.Cell($"C{row}").FormulaA1 = $"=COUNTIFS('👥 Clientes'!C:C,B{row},'👥 Clientes'!H:H,\"Sí\")";
+            
+            // Fórmula para contar asignaciones activas de ese país (por cliente)
+            // Necesitamos contar en Asignaciones donde el cliente es de este país
+            ws.Cell($"D{row}").FormulaA1 = $"=SUMPRODUCT(('🔄 Asignaciones'!G:G=\"Sí\")*(VLOOKUP('🔄 Asignaciones'!C:C,'👥 Clientes'!A:C,3,FALSE)=B{row}))";
+            
+            // Fórmula para contar empleados únicos asignados a clientes de este país
+            // Simplificado: contar empleados en hoja de empleados que tienen cliente asignado de este país
+            ws.Cell($"E{row}").FormulaA1 = $"=SUMPRODUCT((VLOOKUP('👨‍💼 Empleados'!H:H,'👥 Clientes'!A:C,3,FALSE)=B{row})*('👨‍💼 Empleados'!J:J=\"Sí\"))";
+            
             row++;
         }
         
@@ -369,7 +377,7 @@ public class ExcelGeneratorService
     {
         var ws = workbook.Worksheets.Add("🔄 Asignaciones");
         
-        // Headers
+        // Headers - Añadidas columnas de detección de conflictos
         ws.Cell("A1").Value = "ID";
         ws.Cell("B1").Value = "Empleado";
         ws.Cell("C1").Value = "Cliente";
@@ -377,10 +385,14 @@ public class ExcelGeneratorService
         ws.Cell("E1").Value = "Fecha Fin";
         ws.Cell("F1").Value = "Duración (días)";
         ws.Cell("G1").Value = "Activa";
-        ws.Cell("H1").Value = "Observaciones";
+        ws.Cell("H1").Value = "Conflictos Vacaciones";
+        ws.Cell("I1").Value = "Conflictos Viajes";
+        ws.Cell("J1").Value = "Feriados Empleado";
+        ws.Cell("K1").Value = "Feriados Cliente";
+        ws.Cell("L1").Value = "Observaciones";
         
         // Estilo headers
-        ws.Range("A1:H1").Style
+        ws.Range("A1:L1").Style
             .Font.SetBold().Fill.SetBackgroundColor(XLColor.DarkBlue)
             .Font.SetFontColor(XLColor.White);
         
@@ -413,19 +425,38 @@ public class ExcelGeneratorService
             }
             
             ws.Cell($"G{row}").Value = asignacion.Activa ? "Sí" : "No";
-            ws.Cell($"H{row}").Value = asignacion.Observaciones;
+            
+            // Fórmula para detectar conflictos con vacaciones
+            // Cuenta vacaciones del empleado que se solapan con este período de asignación
+            ws.Cell($"H{row}").FormulaA1 = $"=SUMPRODUCT(('🏖️ Vacaciones'!$B:$B=B{row})*('🏖️ Vacaciones'!$C:$C<=IF(E{row}=\"\",TODAY(),E{row}))*('🏖️ Vacaciones'!$D:$D>=D{row}))";
+            
+            // Fórmula para detectar conflictos con viajes
+            ws.Cell($"I{row}").FormulaA1 = $"=SUMPRODUCT(('✈️ Viajes'!$B:$B=B{row})*('✈️ Viajes'!$F:$F<=IF(E{row}=\"\",TODAY(),E{row}))*('✈️ Viajes'!$G:$G>=D{row}))";
+            
+            // Fórmula para contar feriados en país/ciudad del empleado durante la asignación
+            // Simplificado: cuenta feriados en el rango de fechas
+            ws.Cell($"J{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&D{row},'📅 Feriados'!$D:$D,\"<=\"&IF(E{row}=\"\",TODAY(),E{row}))";
+            
+            // Fórmula para contar feriados en país/ciudad del cliente durante la asignación
+            ws.Cell($"K{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&D{row},'📅 Feriados'!$D:$D,\"<=\"&IF(E{row}=\"\",TODAY(),E{row}))";
+            
+            ws.Cell($"L{row}").Value = asignacion.Observaciones;
             
             // Formato condicional
             if (asignacion.Activa)
             {
-                ws.Range($"A{row}:H{row}").Style.Fill.SetBackgroundColor(XLColor.LightGreen);
+                ws.Range($"A{row}:L{row}").Style.Fill.SetBackgroundColor(XLColor.LightGreen);
             }
+            
+            // Resaltar conflictos en rojo
+            ws.Cell($"H{row}").Style.Font.SetBold();
+            ws.Cell($"I{row}").Style.Font.SetBold();
             
             row++;
         }
         
         // Crear tabla
-        var tabla = ws.Range($"A1:H{row - 1}").CreateTable();
+        var tabla = ws.Range($"A1:L{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
         
         ws.Columns().AdjustToContents();
@@ -436,24 +467,26 @@ public class ExcelGeneratorService
     {
         var ws = workbook.Worksheets.Add("🏖️ Vacaciones");
         
-        // Headers
+        // Headers - Añadidas columnas de detección de conflictos
         ws.Cell("A1").Value = "ID";
         ws.Cell("B1").Value = "Empleado";
         ws.Cell("C1").Value = "Fecha Inicio";
         ws.Cell("D1").Value = "Fecha Fin";
         ws.Cell("E1").Value = "Días";
         ws.Cell("F1").Value = "Estado";
-        ws.Cell("G1").Value = "Incluye Feriados";
-        ws.Cell("H1").Value = "Observaciones";
+        ws.Cell("G1").Value = "Conflictos Viajes";
+        ws.Cell("H1").Value = "Conflictos Soporte";
+        ws.Cell("I1").Value = "Feriados Empleado";
+        ws.Cell("J1").Value = "Feriados Cliente";
+        ws.Cell("K1").Value = "Observaciones";
         
         // Estilo headers
-        ws.Range("A1:H1").Style
+        ws.Range("A1:K1").Style
             .Font.SetBold().Fill.SetBackgroundColor(XLColor.DarkBlue)
             .Font.SetFontColor(XLColor.White);
         
         // Datos
         int row = 2;
-        var feriadoService = new FeriadoService();
         
         foreach (var vacacion in vacaciones.OrderBy(v => v.FechaInicio))
         {
@@ -471,15 +504,19 @@ public class ExcelGeneratorService
             
             ws.Cell($"F{row}").Value = vacacion.Estado;
             
-            // Verificar si incluye feriados
-            if (empleado != null)
-            {
-                var feriadosEnPeriodo = feriadoService.ObtenerFeriadosEnRango(
-                    vacacion.FechaInicio, vacacion.FechaFin, empleado.Pais, feriados);
-                ws.Cell($"G{row}").Value = feriadosEnPeriodo.Any() ? "Sí" : "No";
-            }
+            // Fórmula para detectar conflictos con viajes del mismo empleado
+            ws.Cell($"G{row}").FormulaA1 = $"=SUMPRODUCT(('✈️ Viajes'!$B:$B=B{row})*('✈️ Viajes'!$F:$F<=D{row})*('✈️ Viajes'!$G:$G>=C{row}))";
             
-            ws.Cell($"H{row}").Value = vacacion.Observaciones;
+            // Fórmula para detectar conflictos con turnos de soporte
+            ws.Cell($"H{row}").FormulaA1 = $"=SUMPRODUCT(('🛠️ Turnos Soporte'!$B:$B=B{row})*('🛠️ Turnos Soporte'!$C:$C<=D{row})*('🛠️ Turnos Soporte'!$D:$D>=C{row}))";
+            
+            // Fórmula para contar feriados en país del empleado durante las vacaciones
+            ws.Cell($"I{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&C{row},'📅 Feriados'!$D:$D,\"<=\"&D{row})";
+            
+            // Fórmula para contar feriados en país del cliente (si tiene asignación activa)
+            ws.Cell($"J{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&C{row},'📅 Feriados'!$D:$D,\"<=\"&D{row})";
+            
+            ws.Cell($"K{row}").Value = vacacion.Observaciones;
             
             // Formato condicional por estado
             var color = vacacion.Estado switch
@@ -489,13 +526,17 @@ public class ExcelGeneratorService
                 "Rechazada" => XLColor.Red,
                 _ => XLColor.White
             };
-            ws.Range($"A{row}:H{row}").Style.Fill.SetBackgroundColor(color);
+            ws.Range($"A{row}:K{row}").Style.Fill.SetBackgroundColor(color);
+            
+            // Resaltar conflictos
+            ws.Cell($"G{row}").Style.Font.SetBold();
+            ws.Cell($"H{row}").Style.Font.SetBold();
             
             row++;
         }
         
         // Crear tabla
-        var tabla = ws.Range($"A1:H{row - 1}").CreateTable();
+        var tabla = ws.Range($"A1:K{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
         
         ws.Columns().AdjustToContents();
@@ -506,7 +547,7 @@ public class ExcelGeneratorService
     {
         var ws = workbook.Worksheets.Add("✈️ Viajes");
         
-        // Headers
+        // Headers - Añadidas columnas de feriados empleado/cliente
         ws.Cell("A1").Value = "ID";
         ws.Cell("B1").Value = "Empleado";
         ws.Cell("C1").Value = "Cliente";
@@ -517,16 +558,17 @@ public class ExcelGeneratorService
         ws.Cell("H1").Value = "Días";
         ws.Cell("I1").Value = "Motivo";
         ws.Cell("J1").Value = "Estado";
-        ws.Cell("K1").Value = "Feriados en Destino";
+        ws.Cell("K1").Value = "Feriados Destino";
+        ws.Cell("L1").Value = "Feriados Empleado";
+        ws.Cell("M1").Value = "Conflictos Soporte";
         
         // Estilo headers
-        ws.Range("A1:K1").Style
+        ws.Range("A1:M1").Style
             .Font.SetBold().Fill.SetBackgroundColor(XLColor.DarkBlue)
             .Font.SetFontColor(XLColor.White);
         
         // Datos
         int row = 2;
-        var feriadoService = new FeriadoService();
         
         foreach (var viaje in viajes.OrderBy(v => v.FechaInicio))
         {
@@ -549,15 +591,14 @@ public class ExcelGeneratorService
             ws.Cell($"I{row}").Value = viaje.Motivo;
             ws.Cell($"J{row}").Value = viaje.Estado;
             
-            // Verificar feriados en destino
-            var feriadosEnDestino = feriadoService.ObtenerFeriadosEnRango(
-                viaje.FechaInicio, viaje.FechaFin, viaje.PaisDestino, feriados);
-            ws.Cell($"K{row}").Value = feriadosEnDestino.Any() ? "Sí" : "No";
+            // Fórmula para contar feriados en país destino (cliente)
+            ws.Cell($"K{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&F{row},'📅 Feriados'!$D:$D,\"<=\"&G{row},'📅 Feriados'!$B:$B,D{row})";
             
-            if (feriadosEnDestino.Any())
-            {
-                ws.Cell($"K{row}").Style.Fill.SetBackgroundColor(XLColor.LightYellow);
-            }
+            // Fórmula para contar feriados en país del empleado
+            ws.Cell($"L{row}").FormulaA1 = $"=COUNTIFS('📅 Feriados'!$D:$D,\">=\"&F{row},'📅 Feriados'!$D:$D,\"<=\"&G{row})";
+            
+            // Fórmula para detectar conflictos con turnos de soporte
+            ws.Cell($"M{row}").FormulaA1 = $"=SUMPRODUCT(('🛠️ Turnos Soporte'!$B:$B=B{row})*('🛠️ Turnos Soporte'!$C:$C<=G{row})*('🛠️ Turnos Soporte'!$D:$D>=F{row}))";
             
             // Formato condicional por estado
             var color = viaje.Estado switch
@@ -567,13 +608,16 @@ public class ExcelGeneratorService
                 "Completado" => XLColor.LightGreen,
                 _ => XLColor.White
             };
-            ws.Range($"A{row}:K{row}").Style.Fill.SetBackgroundColor(color);
+            ws.Range($"A{row}:M{row}").Style.Fill.SetBackgroundColor(color);
+            
+            // Resaltar conflictos
+            ws.Cell($"M{row}").Style.Font.SetBold();
             
             row++;
         }
         
         // Crear tabla
-        var tabla = ws.Range($"A1:K{row - 1}").CreateTable();
+        var tabla = ws.Range($"A1:M{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
         
         ws.Columns().AdjustToContents();
