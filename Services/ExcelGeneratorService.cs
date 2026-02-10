@@ -90,22 +90,22 @@ public class ExcelGeneratorService
         
         ws.Row(1).Height = 30;
         
-        // KPIs principales
+        // KPIs principales con fórmulas
         int row = 3;
         
-        // Primera fila de KPIs
-        CrearKPI(ws, "B", row, "Total Empleados Activos", data.Empleados.Count(e => e.Activo));
-        CrearKPI(ws, "C", row, "Total Clientes Activos", data.Clientes.Count(c => c.Activo));
-        CrearKPI(ws, "D", row, "Asignaciones Activas", data.Asignaciones.Count(a => a.Activa));
-        CrearKPI(ws, "E", row, "Vacaciones Pendientes", data.Vacaciones.Count(v => v.Estado == "Pendiente"));
+        // Primera fila de KPIs - Usar fórmulas COUNTIF que referencian otras hojas
+        CrearKPIConFormula(ws, "B", row, "Total Empleados Activos", "=COUNTIF('👨‍💼 Empleados'!J:J,\"Sí\")");
+        CrearKPIConFormula(ws, "C", row, "Total Clientes Activos", "=COUNTIF('👥 Clientes'!H:H,\"Sí\")");
+        CrearKPIConFormula(ws, "D", row, "Asignaciones Activas", "=COUNTIF('🔄 Asignaciones'!G:G,\"Sí\")");
+        CrearKPIConFormula(ws, "E", row, "Vacaciones Pendientes", "=COUNTIF('🏖️ Vacaciones'!F:F,\"Pendiente\")");
         
         row += 3;
         
-        // Segunda fila de KPIs
-        CrearKPI(ws, "B", row, "Alertas Alta Prioridad", alertas.Count(a => a.Nivel == "Alta"));
-        CrearKPI(ws, "C", row, "Alertas Media Prioridad", alertas.Count(a => a.Nivel == "Media"));
-        CrearKPI(ws, "D", row, "Alertas Baja Prioridad", alertas.Count(a => a.Nivel == "Baja"));
-        CrearKPI(ws, "E", row, "Viajes Planificados", data.Viajes.Count(v => v.Estado == "Planificado"));
+        // Segunda fila de KPIs - Usar fórmulas COUNTIF que referencian hoja de alertas
+        CrearKPIConFormula(ws, "B", row, "Alertas Alta Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Alta\")");
+        CrearKPIConFormula(ws, "C", row, "Alertas Media Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Media\")");
+        CrearKPIConFormula(ws, "D", row, "Alertas Baja Prioridad", "=COUNTIF('🚨 Alertas'!C:C,\"Baja\")");
+        CrearKPIConFormula(ws, "E", row, "Viajes Planificados", "=COUNTIF('✈️ Viajes'!J:J,\"Planificado\")");
         
         row += 3;
         
@@ -151,6 +151,25 @@ public class ExcelGeneratorService
             .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
         
         ws.Cell($"{col}{row + 1}").Value = valor;
+        ws.Cell($"{col}{row + 1}").Style
+            .Font.SetBold().Font.SetFontSize(16)
+            .Font.SetFontColor(XLColor.DarkBlue)
+            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+        
+        ws.Range($"{col}{row}:{col}{row + 1}").Style
+            .Border.SetOutsideBorder(XLBorderStyleValues.Medium)
+            .Border.SetOutsideBorderColor(XLColor.DarkBlue);
+    }
+    
+    private void CrearKPIConFormula(IXLWorksheet ws, string col, int row, string titulo, string formula)
+    {
+        ws.Cell($"{col}{row}").Value = titulo;
+        ws.Cell($"{col}{row}").Style
+            .Font.SetBold().Font.SetFontSize(10)
+            .Fill.SetBackgroundColor(XLColor.LightGray)
+            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+        
+        ws.Cell($"{col}{row + 1}").FormulaA1 = formula;
         ws.Cell($"{col}{row + 1}").Style
             .Font.SetBold().Font.SetFontSize(16)
             .Font.SetFontColor(XLColor.DarkBlue)
@@ -383,14 +402,14 @@ public class ExcelGeneratorService
                 ws.Cell($"E{row}").Value = asignacion.FechaFin.Value;
                 ws.Cell($"E{row}").Style.DateFormat.Format = "dd/mm/yyyy";
                 
-                var duracion = (asignacion.FechaFin.Value - asignacion.FechaInicio).Days;
-                ws.Cell($"F{row}").Value = duracion;
+                // Usar fórmula para calcular duración
+                ws.Cell($"F{row}").FormulaA1 = $"=IF(E{row}=\"\",TODAY()-D{row},E{row}-D{row})";
             }
             else
             {
-                ws.Cell($"E{row}").Value = "Actual";
-                var duracion = (DateTime.Now - asignacion.FechaInicio).Days;
-                ws.Cell($"F{row}").Value = duracion;
+                ws.Cell($"E{row}").Value = "";
+                // Usar fórmula para calcular duración desde fecha inicio hasta hoy
+                ws.Cell($"F{row}").FormulaA1 = $"=TODAY()-D{row}";
             }
             
             ws.Cell($"G{row}").Value = asignacion.Activa ? "Sí" : "No";
@@ -447,8 +466,8 @@ public class ExcelGeneratorService
             ws.Cell($"D{row}").Value = vacacion.FechaFin;
             ws.Cell($"D{row}").Style.DateFormat.Format = "dd/mm/yyyy";
             
-            var dias = (vacacion.FechaFin - vacacion.FechaInicio).Days + 1;
-            ws.Cell($"E{row}").Value = dias;
+            // Usar fórmula para calcular días
+            ws.Cell($"E{row}").FormulaA1 = $"=D{row}-C{row}+1";
             
             ws.Cell($"F{row}").Value = vacacion.Estado;
             
@@ -524,8 +543,8 @@ public class ExcelGeneratorService
             ws.Cell($"G{row}").Value = viaje.FechaFin;
             ws.Cell($"G{row}").Style.DateFormat.Format = "dd/mm/yyyy";
             
-            var dias = (viaje.FechaFin - viaje.FechaInicio).Days + 1;
-            ws.Cell($"H{row}").Value = dias;
+            // Usar fórmula para calcular días
+            ws.Cell($"H{row}").FormulaA1 = $"=G{row}-F{row}+1";
             
             ws.Cell($"I{row}").Value = viaje.Motivo;
             ws.Cell($"J{row}").Value = viaje.Estado;
