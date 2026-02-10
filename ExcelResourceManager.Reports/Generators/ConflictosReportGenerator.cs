@@ -48,10 +48,10 @@ public class ConflictosReportGenerator : IReportService
             GenerarHojaResumen(workbook, conflictos);
 
             // Sheet 2: Lista Detallada
-            await GenerarHojaDetalladaAsync(workbook, conflictos, empleados);
+            GenerarHojaDetallada(workbook, conflictos, empleados);
 
             // Sheet 3: Por Empleado
-            await GenerarHojaPorEmpleadoAsync(workbook, conflictos, empleados);
+            GenerarHojaPorEmpleado(workbook, conflictos, empleados);
 
             // Guardar archivo
             var reportesDir = Path.Combine(Directory.GetCurrentDirectory(), "Reportes");
@@ -132,7 +132,7 @@ public class ConflictosReportGenerator : IReportService
         worksheet.Columns().AdjustToContents();
     }
 
-    private async Task GenerarHojaDetalladaAsync(XLWorkbook workbook, List<Conflicto> conflictos, List<Empleado> empleados)
+    private void GenerarHojaDetallada(XLWorkbook workbook, List<Conflicto> conflictos, List<Empleado> empleados)
     {
         var worksheet = workbook.Worksheets.Add("Lista Detallada");
 
@@ -200,7 +200,7 @@ public class ConflictosReportGenerator : IReportService
         worksheet.Columns().AdjustToContents();
     }
 
-    private async Task GenerarHojaPorEmpleadoAsync(XLWorkbook workbook, List<Conflicto> conflictos, List<Empleado> empleados)
+    private void GenerarHojaPorEmpleado(XLWorkbook workbook, List<Conflicto> conflictos, List<Empleado> empleados)
     {
         var worksheet = workbook.Worksheets.Add("Por Empleado");
 
