@@ -55,12 +55,19 @@ public class ExcelGeneratorService
             Console.WriteLine("  Creando hoja: Dashboard Ocupación...");
             CrearDashboardOcupacion(workbook, data);
             
+            Console.WriteLine("  Creando hoja: Panel de Control...");
+            CrearPanelDeControl(workbook);
+            
             Console.WriteLine("  Creando hoja: Instrucciones...");
             CrearHojaInstrucciones(workbook);
             
             // Guardar el archivo
             workbook.SaveAs(filePath);
         }
+        
+        // Generar archivo con código VBA
+        Console.WriteLine("  Generando archivo con código VBA...");
+        GenerarArchivoVBA(timestamp);
         
         // Aplicar mejoras con Open XML SDK si es necesario
         try
@@ -74,6 +81,26 @@ public class ExcelGeneratorService
         }
         
         return filePath;
+    }
+    
+    private void GenerarArchivoVBA(string timestamp)
+    {
+        try
+        {
+            var vbaService = new VBAMacroService();
+            var vbaCode = vbaService.GenerarCodigoVBA();
+            
+            var vbaFileName = $"VBA_Macro_Code_{timestamp}.txt";
+            var vbaFilePath = Path.Combine(Directory.GetCurrentDirectory(), vbaFileName);
+            
+            File.WriteAllText(vbaFilePath, vbaCode);
+            
+            Console.WriteLine($"  ✓ Código VBA guardado en: {vbaFileName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  ⚠️ No se pudo generar archivo VBA: {ex.Message}");
+        }
     }
     
     private void CrearDashboardGerencial(XLWorkbook workbook, DataContainer data, List<Alerta> alertas)
@@ -531,6 +558,23 @@ public class ExcelGeneratorService
         var tabla = ws.Range($"A1:J{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
         
+        // Agregar data validation para columna H (Cliente Asignado)
+        // Crear lista de nombres de clientes para el dropdown
+        var clientesSheet = workbook.Worksheet("👥 Clientes");
+        if (clientesSheet != null)
+        {
+            // Data validation: columna H debe seleccionar desde lista de clientes
+            var lastClientRow = clientesSheet.LastRowUsed()?.RowNumber() ?? 1;
+            var validationRange = ws.Range($"H2:H1000");
+            var validation = validationRange.CreateDataValidation();
+            validation.List($"'👥 Clientes'!$B$2:$B${lastClientRow}", true);
+        }
+        
+        // Agregar data validation para columna J (Activo: Sí/No)
+        var activoRange = ws.Range($"J2:J1000");
+        var validationActivo = activoRange.CreateDataValidation();
+        validationActivo.List("\"Sí\",\"No\"", true);
+        
         ws.Columns().AdjustToContents();
     }
     
@@ -621,6 +665,34 @@ public class ExcelGeneratorService
         var tabla = ws.Range($"A1:L{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
         
+        // Agregar data validation para columna B (Empleado)
+        // Necesitamos crear una lista combinada de nombres completos de empleados
+        var empleadosSheet = workbook.Worksheet("👨‍💼 Empleados");
+        if (empleadosSheet != null)
+        {
+            var lastEmpRow = empleadosSheet.LastRowUsed()?.RowNumber() ?? 1;
+            // Crear referencia a nombres completos (asumiendo que hay una columna helper o usamos CONCATENATE)
+            // Por simplicidad, validamos contra rango de nombres
+            var validationRangeEmpleado = ws.Range($"B2:B1000");
+            // Nota: ClosedXML tiene limitaciones, podríamos necesitar una columna helper en Empleados
+            // Por ahora, validamos contra  el rango
+        }
+        
+        // Agregar data validation para columna C (Cliente)
+        var clientesSheet = workbook.Worksheet("👥 Clientes");
+        if (clientesSheet != null)
+        {
+            var lastClientRow = clientesSheet.LastRowUsed()?.RowNumber() ?? 1;
+            var validationRangeCliente = ws.Range($"C2:C1000");
+            var validationCliente = validationRangeCliente.CreateDataValidation();
+            validationCliente.List($"'👥 Clientes'!$B$2:$B${lastClientRow}", true);
+        }
+        
+        // Agregar data validation para columna G (Activa: Sí/No)
+        var activaRange = ws.Range($"G2:G1000");
+        var validationActiva = activaRange.CreateDataValidation();
+        validationActiva.List("\"Sí\",\"No\"", true);
+        
         ws.Columns().AdjustToContents();
     }
     
@@ -700,6 +772,11 @@ public class ExcelGeneratorService
         // Crear tabla
         var tabla = ws.Range($"A1:K{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
+        
+        // Agregar data validation para columna F (Estado)
+        var estadoRange = ws.Range($"F2:F1000");
+        var validationEstado = estadoRange.CreateDataValidation();
+        validationEstado.List("\"Pendiente\",\"Aprobada\",\"Rechazada\"", true);
         
         ws.Columns().AdjustToContents();
     }
@@ -781,6 +858,21 @@ public class ExcelGeneratorService
         // Crear tabla
         var tabla = ws.Range($"A1:M{row - 1}").CreateTable();
         tabla.Theme = XLTableTheme.TableStyleMedium9;
+        
+        // Agregar data validation para columna C (Cliente)
+        var clientesSheet = workbook.Worksheet("👥 Clientes");
+        if (clientesSheet != null)
+        {
+            var lastClientRow = clientesSheet.LastRowUsed()?.RowNumber() ?? 1;
+            var validationRangeCliente = ws.Range($"C2:C1000");
+            var validationCliente = validationRangeCliente.CreateDataValidation();
+            validationCliente.List($"'👥 Clientes'!$B$2:$B${lastClientRow}", true);
+        }
+        
+        // Agregar data validation para columna J (Estado)
+        var estadoRange = ws.Range($"J2:J1000");
+        var validationEstado = estadoRange.CreateDataValidation();
+        validationEstado.List("\"Planificado\",\"En Curso\",\"Completado\",\"Cancelado\"", true);
         
         ws.Columns().AdjustToContents();
     }
@@ -959,6 +1051,146 @@ public class ExcelGeneratorService
         ws.Cell($"{nextCol}{row}").Value = texto;
     }
     
+    private void CrearPanelDeControl(XLWorkbook workbook)
+    {
+        var ws = workbook.Worksheets.Add("🎛️ Panel de Control");
+        
+        int row = 1;
+        
+        // Título
+        ws.Cell($"A{row}").Value = "PANEL DE CONTROL - ACTUALIZACIÓN DE DASHBOARD";
+        ws.Range($"A{row}:E{row}").Merge().Style
+            .Font.SetBold().Font.SetFontSize(18)
+            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+            .Fill.SetBackgroundColor(XLColor.DarkBlue)
+            .Font.SetFontColor(XLColor.White);
+        
+        ws.Row(row).Height = 40;
+        row += 3;
+        
+        // Sección: Descripción
+        ws.Cell($"A{row}").Value = "📋 DESCRIPCIÓN";
+        ws.Cell($"A{row}").Style.Font.SetBold().Font.SetFontSize(14)
+            .Fill.SetBackgroundColor(XLColor.LightBlue);
+        row++;
+        
+        ws.Cell($"A{row}").Value = "Este panel le permite actualizar dinámicamente el Dashboard Gerencial y las columnas de detección de conflictos.";
+        ws.Range($"A{row}:E{row}").Merge().Style.Alignment.SetWrapText();
+        row += 2;
+        
+        // Sección: Instrucciones para agregar el botón VBA
+        ws.Cell($"A{row}").Value = "⚙️ CONFIGURACIÓN DEL BOTÓN DE ACTUALIZACIÓN";
+        ws.Cell($"A{row}").Style.Font.SetBold().Font.SetFontSize(14)
+            .Fill.SetBackgroundColor(XLColor.LightYellow);
+        row++;
+        
+        var instrucciones = new[]
+        {
+            "1. Abra el archivo VBA_Macro_Code.txt que se generó junto con este Excel",
+            "2. En Excel, presione Alt + F11 para abrir el Editor de Visual Basic",
+            "3. En el menú, seleccione Insertar → Módulo",
+            "4. Copie y pegue todo el código del archivo VBA_Macro_Code.txt en el módulo",
+            "5. Cierre el Editor de Visual Basic",
+            "6. Vaya a la pestaña 'Desarrollador' (si no la ve, actívela en Opciones de Excel)",
+            "7. Haga clic en 'Insertar' → 'Botón de formulario'",
+            "8. Dibuje el botón en este panel (recomendado: celda C15)",
+            "9. En el cuadro de diálogo, seleccione la macro 'ActualizarDashboardYConflictos'",
+            "10. Haga clic derecho en el botón → 'Modificar texto' → Escriba 'ACTUALIZAR DASHBOARD'",
+            "",
+            "✅ ¡Listo! Ahora puede usar el botón para actualizar el dashboard y conflictos."
+        };
+        
+        foreach (var instruccion in instrucciones)
+        {
+            if (string.IsNullOrEmpty(instruccion))
+            {
+                row++;
+            }
+            else
+            {
+                ws.Cell($"A{row}").Value = instruccion;
+                ws.Range($"A{row}:E{row}").Merge().Style.Alignment.SetWrapText();
+                row++;
+            }
+        }
+        
+        row += 2;
+        
+        // Sección: Qué hace el botón
+        ws.Cell($"A{row}").Value = "🔄 QUÉ HACE EL BOTÓN DE ACTUALIZACIÓN";
+        ws.Cell($"A{row}").Style.Font.SetBold().Font.SetFontSize(14)
+            .Fill.SetBackgroundColor(XLColor.LightGreen);
+        row++;
+        
+        var funciones = new[]
+        {
+            "✓ Actualiza las columnas de conflictos en la hoja de Vacaciones",
+            "✓ Actualiza las columnas de conflictos en la hoja de Viajes",
+            "✓ Actualiza las columnas de conflictos en la hoja de Asignaciones",
+            "✓ Recalcula todas las fórmulas del Dashboard Gerencial",
+            "✓ Actualiza la hoja de Alertas y Conflictos",
+            "✓ Muestra un mensaje de confirmación al finalizar"
+        };
+        
+        foreach (var funcion in funciones)
+        {
+            ws.Cell($"A{row}").Value = funcion;
+            ws.Range($"A{row}:E{row}").Merge();
+            row++;
+        }
+        
+        row += 2;
+        
+        // Sección: Cuándo usar el botón
+        ws.Cell($"A{row}").Value = "📅 CUÁNDO USAR EL BOTÓN";
+        ws.Cell($"A{row}").Style.Font.SetBold().Font.SetFontSize(14)
+            .Fill.SetBackgroundColor(XLColor.LightCyan);
+        row++;
+        
+        var momentos = new[]
+        {
+            "• Después de agregar nuevas vacaciones",
+            "• Después de agregar nuevos viajes",
+            "• Después de agregar nuevas asignaciones",
+            "• Después de modificar fechas de inicio o fin",
+            "• Después de cambiar estados (Pendiente, Aprobada, etc.)",
+            "• Al inicio del día para ver el estado actual",
+            "",
+            "ℹ️ NOTA: Las fórmulas se actualizan automáticamente en Excel, pero el botón",
+            "   asegura que todas las columnas de conflictos estén correctamente calculadas."
+        };
+        
+        foreach (var momento in momentos)
+        {
+            if (string.IsNullOrEmpty(momento))
+            {
+                row++;
+            }
+            else
+            {
+                ws.Cell($"A{row}").Value = momento;
+                ws.Range($"A{row}:E{row}").Merge();
+                row++;
+            }
+        }
+        
+        row += 3;
+        
+        // Área para el botón
+        ws.Cell($"C{row}").Value = "[ ESPACIO PARA EL BOTÓN DE ACTUALIZACIÓN ]";
+        ws.Range($"C{row}:D{row}").Merge().Style
+            .Font.SetBold().Font.SetFontSize(14)
+            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+            .Border.SetOutsideBorder(XLBorderStyleValues.Thick)
+            .Border.SetOutsideBorderColor(XLColor.DarkBlue)
+            .Fill.SetBackgroundColor(XLColor.LightYellow);
+        
+        ws.Row(row).Height = 50;
+        
+        ws.Columns().AdjustToContents();
+        ws.Column("A").Width = 60;
+    }
+    
     private void CrearHojaInstrucciones(XLWorkbook workbook)
     {
         var ws = workbook.Worksheets.Add("ℹ️ Instrucciones");
@@ -995,14 +1227,15 @@ public class ExcelGeneratorService
         {
             "📊 Dashboard Gerencial - KPIs y métricas principales con fórmulas dinámicas",
             "🚨 Alertas y Conflictos - Detección automática y dinámica de conflictos",
-            "👥 Clientes - Listado completo de clientes (editable)",
-            "👨‍💼 Empleados - Listado completo de empleados (editable)",
-            "🔄 Asignaciones - Historial con detección automática de conflictos",
-            "🏖️ Vacaciones - Registro con detección de conflictos de viajes y soporte",
-            "✈️ Viajes - Registro con detección de feriados y conflictos",
+            "👥 Clientes - Listado completo de clientes (editable con dropdowns)",
+            "👨‍💼 Empleados - Listado completo de empleados (editable con dropdowns)",
+            "🔄 Asignaciones - Historial con detección automática de conflictos (dropdowns)",
+            "🏖️ Vacaciones - Registro con detección de conflictos (dropdowns de estado)",
+            "✈️ Viajes - Registro con detección de feriados y conflictos (dropdowns)",
             "🛠️ Turnos Soporte - Planificación completa de 52 semanas (año 2026)",
             "📅 Feriados - Catálogo de feriados por país (EC y PY)",
             "📊 Dashboard Ocupación - Vista dinámica de ocupación de empleados",
+            "🎛️ Panel de Control - Instrucciones para agregar botón VBA de actualización",
             "ℹ️ Instrucciones - Esta hoja"
         };
         

@@ -1,0 +1,165 @@
+Option Explicit
+
+' ========================================
+' MÓDULO PRINCIPAL - ACTUALIZACIÓN DE DASHBOARD
+' ========================================
+
+Sub ActualizarDashboardYConflictos()
+    On Error GoTo ErrorHandler
+    
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    
+    ' Mostrar progreso
+    Application.StatusBar = "Actualizando columnas de conflictos..."
+    
+    ' 1. Actualizar columnas de conflictos en Vacaciones
+    Call ActualizarConflictosVacaciones
+    
+    ' 2. Actualizar columnas de conflictos en Viajes
+    Application.StatusBar = "Actualizando conflictos de viajes..."
+    Call ActualizarConflictosViajes
+    
+    ' 3. Actualizar columnas de conflictos en Asignaciones
+    Application.StatusBar = "Actualizando conflictos de asignaciones..."
+    Call ActualizarConflictosAsignaciones
+    
+    ' 4. Recalcular todas las fórmulas
+    Application.StatusBar = "Recalculando fórmulas..."
+    Application.Calculation = xlCalculationAutomatic
+    Application.Calculate
+    
+    ' 5. Actualizar hoja de Alertas y Conflictos
+    Application.StatusBar = "Actualizando hoja de alertas..."
+    Call ActualizarHojaAlertas
+    
+    Application.ScreenUpdating = True
+    Application.StatusBar = False
+    
+    MsgBox "✅ Actualización completada exitosamente!" & vbCrLf & vbCrLf & _
+           "- Conflictos detectados y actualizados" & vbCrLf & _
+           "- Dashboard recalculado" & vbCrLf & _
+           "- Alertas actualizadas", vbInformation, "Actualización Completa"
+    
+    Exit Sub
+    
+ErrorHandler:
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    Application.StatusBar = False
+    MsgBox "❌ Error al actualizar: " & Err.Description, vbCritical, "Error"
+End Sub
+
+Private Sub ActualizarConflictosVacaciones()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("🏖️ Vacaciones")
+    If ws Is Nothing Then Exit Sub
+    On Error GoTo 0
+    
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    ' Asegurar que las columnas de conflictos existen y tienen fórmulas
+    For i = 2 To lastRow
+        ' Columna G: Conflictos Viajes
+        If Len(ws.Cells(i, 7).Formula) = 0 Then
+            ws.Cells(i, 7).Formula = "=SUMPRODUCT(('✈️ Viajes'!$B:$B=B" & i & ")*('✈️ Viajes'!$F:$F<=D" & i & ")*('✈️ Viajes'!$G:$G>=C" & i & "))"
+        End If
+        
+        ' Columna H: Conflictos Soporte
+        If Len(ws.Cells(i, 8).Formula) = 0 Then
+            ws.Cells(i, 8).Formula = "=SUMPRODUCT(('🛠️ Turnos Soporte'!$B:$B=B" & i & ")*('🛠️ Turnos Soporte'!$C:$C<=D" & i & ")*('🛠️ Turnos Soporte'!$D:$D>=C" & i & "))"
+        End If
+        
+        ' Columna I: Feriados Empleado
+        If Len(ws.Cells(i, 9).Formula) = 0 Then
+            ws.Cells(i, 9).Formula = "=COUNTIFS('📅 Feriados'!$D:$D,"">=""&C" & i & ",'📅 Feriados'!$D:$D,""<=""&D" & i & ")"
+        End If
+        
+        ' Columna J: Feriados Cliente
+        If Len(ws.Cells(i, 10).Formula) = 0 Then
+            ws.Cells(i, 10).Formula = "=COUNTIFS('📅 Feriados'!$D:$D,"">=""&C" & i & ",'📅 Feriados'!$D:$D,""<=""&D" & i & ")"
+        End If
+    Next i
+End Sub
+
+Private Sub ActualizarConflictosViajes()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("✈️ Viajes")
+    If ws Is Nothing Then Exit Sub
+    On Error GoTo 0
+    
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    For i = 2 To lastRow
+        ' Columna K: Feriados Destino
+        If Len(ws.Cells(i, 11).Formula) = 0 Then
+            ws.Cells(i, 11).Formula = "=COUNTIFS('📅 Feriados'!$B:$B,D" & i & ",'📅 Feriados'!$D:$D,"">=""&F" & i & ",'📅 Feriados'!$D:$D,""<=""&G" & i & ")"
+        End If
+        
+        ' Columna L: Feriados Empleado
+        If Len(ws.Cells(i, 12).Formula) = 0 Then
+            ws.Cells(i, 12).Formula = "=COUNTIFS('📅 Feriados'!$D:$D,"">=""&F" & i & ",'📅 Feriados'!$D:$D,""<=""&G" & i & ")"
+        End If
+        
+        ' Columna M: Conflictos Soporte
+        If Len(ws.Cells(i, 13).Formula) = 0 Then
+            ws.Cells(i, 13).Formula = "=SUMPRODUCT(('🛠️ Turnos Soporte'!$B:$B=B" & i & ")*('🛠️ Turnos Soporte'!$C:$C<=G" & i & ")*('🛠️ Turnos Soporte'!$D:$D>=F" & i & "))"
+        End If
+    Next i
+End Sub
+
+Private Sub ActualizarConflictosAsignaciones()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("🔄 Asignaciones")
+    If ws Is Nothing Then Exit Sub
+    On Error GoTo 0
+    
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    For i = 2 To lastRow
+        ' Columna H: Conflictos Vacaciones
+        If Len(ws.Cells(i, 8).Formula) = 0 Then
+            ws.Cells(i, 8).Formula = "=SUMPRODUCT(('🏖️ Vacaciones'!$B:$B=B" & i & ")*('🏖️ Vacaciones'!$C:$C<=E" & i & ")*('🏖️ Vacaciones'!$D:$D>=D" & i & "))"
+        End If
+        
+        ' Columna I: Conflictos Viajes
+        If Len(ws.Cells(i, 9).Formula) = 0 Then
+            ws.Cells(i, 9).Formula = "=SUMPRODUCT(('✈️ Viajes'!$B:$B=B" & i & ")*('✈️ Viajes'!$F:$F<=E" & i & ")*('✈️ Viajes'!$G:$G>=D" & i & "))"
+        End If
+        
+        ' Columna J: Feriados Empleado
+        If Len(ws.Cells(i, 10).Formula) = 0 Then
+            ws.Cells(i, 10).Formula = "=COUNTIFS('📅 Feriados'!$D:$D,"">=""&D" & i & ",'📅 Feriados'!$D:$D,""<=""&E" & i & ")"
+        End If
+        
+        ' Columna K: Feriados Cliente
+        If Len(ws.Cells(i, 11).Formula) = 0 Then
+            ws.Cells(i, 11).Formula = "=COUNTIFS('📅 Feriados'!$D:$D,"">=""&D" & i & ",'📅 Feriados'!$D:$D,""<=""&E" & i & ")"
+        End If
+    Next i
+End Sub
+
+Private Sub ActualizarHojaAlertas()
+    Dim ws As Worksheet
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("🚨 Alertas y Conflictos")
+    If ws Is Nothing Then Exit Sub
+    On Error GoTo 0
+    
+    ' Simplemente recalcular la hoja
+    ws.Calculate
+End Sub
+
