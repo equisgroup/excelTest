@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "dgSpecHash": "6XJsK7fW1MI=",
-  "success": false,
+  "dgSpecHash": "2K5hr2VTb/4=",
+  "success": true,
   "projectFilePath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj",
   "expectedPackageFiles": [
     "/home/runner/.nuget/packages/avalonia/11.1.3/avalonia.11.1.3.nupkg.sha512",
@@ -11,7 +11,7 @@
     "/home/runner/.nuget/packages/avalonia.controls.datagrid/11.1.3/avalonia.controls.datagrid.11.1.3.nupkg.sha512",
     "/home/runner/.nuget/packages/avalonia.desktop/11.1.3/avalonia.desktop.11.1.3.nupkg.sha512",
     "/home/runner/.nuget/packages/avalonia.diagnostics/11.1.3/avalonia.diagnostics.11.1.3.nupkg.sha512",
-    "/home/runner/.nuget/packages/avalonia.fonts.inter/11.3.11/avalonia.fonts.inter.11.3.11.nupkg.sha512",
+    "/home/runner/.nuget/packages/avalonia.fonts.inter/11.1.3/avalonia.fonts.inter.11.1.3.nupkg.sha512",
     "/home/runner/.nuget/packages/avalonia.freedesktop/11.1.3/avalonia.freedesktop.11.1.3.nupkg.sha512",
     "/home/runner/.nuget/packages/avalonia.native/11.1.3/avalonia.native.11.1.3.nupkg.sha512",
     "/home/runner/.nuget/packages/avalonia.reactiveui/11.1.3/avalonia.reactiveui.11.1.3.nupkg.sha512",
@@ -135,17 +135,5 @@
     "/home/runner/.nuget/packages/tmds.dbus.protocol/0.16.0/tmds.dbus.protocol.0.16.0.nupkg.sha512",
     "/home/runner/.nuget/packages/xlparser/1.5.2/xlparser.1.5.2.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1605",
-      "level": "Error",
-      "message": "Warning As Error: Detected package downgrade: Avalonia from 11.3.11 to 11.1.3. Reference the package directly from the project to select a different version. \n ExcelResourceManager.Desktop -> Avalonia.Fonts.Inter 11.3.11 -> Avalonia (>= 11.3.11) \n ExcelResourceManager.Desktop -> Avalonia (>= 11.1.3)",
-      "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj",
-      "filePath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj",
-      "libraryId": "Avalonia",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  "logs": []
 }

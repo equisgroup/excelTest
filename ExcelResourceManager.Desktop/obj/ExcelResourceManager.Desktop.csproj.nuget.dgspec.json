@@ -210,7 +210,7 @@
             },
             "Avalonia.Fonts.Inter": {
               "target": "Package",
-              "version": "[11.3.11, )"
+              "version": "[11.1.3, )"
             },
             "Avalonia.ReactiveUI": {
               "target": "Package",
