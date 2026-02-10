@@ -31,6 +31,9 @@ public class ExcelGeneratorService
             Console.WriteLine("  Creando hoja: Alertas...");
             CrearHojaAlertas(workbook, alertas, data);
             
+            Console.WriteLine("  Creando hoja: Análisis de Alertas...");
+            CrearHojaAnalisisAlertas(workbook, data);
+            
             Console.WriteLine("  Creando hoja: Clientes...");
             CrearHojaClientes(workbook, data.Clientes);
             
@@ -244,6 +247,120 @@ public class ExcelGeneratorService
             var tabla = ws.Range($"A1:I{row - 1}").CreateTable();
             tabla.Theme = XLTableTheme.TableStyleMedium2;
         }
+        
+        ws.Columns().AdjustToContents();
+    }
+    
+    private void CrearHojaAnalisisAlertas(XLWorkbook workbook, DataContainer data)
+    {
+        var ws = workbook.Worksheets.Add("📈 Análisis Alertas");
+        
+        // Título
+        ws.Cell("A1").Value = "ANÁLISIS DINÁMICO DE ALERTAS Y CONFLICTOS";
+        ws.Range("A1:F1").Merge().Style
+            .Font.SetBold().Font.SetFontSize(14)
+            .Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center)
+            .Fill.SetBackgroundColor(XLColor.DarkBlue)
+            .Font.SetFontColor(XLColor.White);
+        
+        ws.Row(1).Height = 30;
+        
+        int row = 3;
+        
+        // Sección 1: Resumen de conflictos por empleado
+        ws.Cell($"A{row}").Value = "CONFLICTOS POR EMPLEADO";
+        ws.Range($"A{row}:F{row}").Merge().Style
+            .Font.SetBold().Font.SetFontSize(12)
+            .Fill.SetBackgroundColor(XLColor.LightBlue);
+        
+        row++;
+        ws.Cell($"A{row}").Value = "Empleado";
+        ws.Cell($"B{row}").Value = "Total Alertas";
+        ws.Cell($"C{row}").Value = "Alertas Alta";
+        ws.Cell($"D{row}").Value = "Alertas Media";
+        ws.Cell($"E{row}").Value = "Alertas Baja";
+        ws.Cell($"F{row}").Value = "Estado";
+        ws.Range($"A{row}:F{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
+        
+        row++;
+        int startRow = row;
+        
+        foreach (var empleado in data.Empleados.Where(e => e.Activo))
+        {
+            var nombreCompleto = $"{empleado.Nombre} {empleado.Apellido}";
+            ws.Cell($"A{row}").Value = nombreCompleto;
+            
+            // Fórmula para contar total de alertas de este empleado
+            ws.Cell($"B{row}").FormulaA1 = $"=COUNTIF('🚨 Alertas'!$D:$D,A{row})";
+            
+            // Fórmula para contar alertas de nivel Alto
+            ws.Cell($"C{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Alta\")";
+            
+            // Fórmula para contar alertas de nivel Medio
+            ws.Cell($"D{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Media\")";
+            
+            // Fórmula para contar alertas de nivel Bajo
+            ws.Cell($"E{row}").FormulaA1 = $"=COUNTIFS('🚨 Alertas'!$D:$D,A{row},'🚨 Alertas'!$C:$C,\"Baja\")";
+            
+            // Fórmula para determinar estado
+            ws.Cell($"F{row}").FormulaA1 = $"=IF(C{row}>0,\"⚠️ CRÍTICO\",IF(D{row}>0,\"⚡ REVISAR\",IF(B{row}>0,\"ℹ️ OK\",\"✅ SIN ALERTAS\")))";
+            
+            row++;
+        }
+        
+        // Crear tabla
+        if (row > startRow)
+        {
+            var tabla = ws.Range($"A{startRow - 1}:F{row - 1}").CreateTable();
+            tabla.Theme = XLTableTheme.TableStyleMedium9;
+        }
+        
+        row += 2;
+        
+        // Sección 2: Resumen de tipos de conflictos
+        ws.Cell($"A{row}").Value = "RESUMEN POR TIPO DE CONFLICTO";
+        ws.Range($"A{row}:C{row}").Merge().Style
+            .Font.SetBold().Font.SetFontSize(12)
+            .Fill.SetBackgroundColor(XLColor.LightBlue);
+        
+        row++;
+        ws.Cell($"A{row}").Value = "Tipo de Conflicto";
+        ws.Cell($"B{row}").Value = "Total";
+        ws.Cell($"C{row}").Value = "% del Total";
+        ws.Range($"A{row}:C{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
+        
+        row++;
+        var tiposConflicto = new[] { "VacacionViaje", "VacacionSoporte", "ViajeSoporte", "ViajeEnFeriado", "VacacionConFeriado", "AsignacionMultiple" };
+        var nombresTipos = new Dictionary<string, string>
+        {
+            { "VacacionViaje", "Vacaciones vs Viajes" },
+            { "VacacionSoporte", "Vacaciones vs Soporte" },
+            { "ViajeSoporte", "Viaje vs Soporte" },
+            { "ViajeEnFeriado", "Viaje en Feriado" },
+            { "VacacionConFeriado", "Vacaciones con Feriado" },
+            { "AsignacionMultiple", "Asignaciones Múltiples" }
+        };
+        
+        foreach (var tipo in tiposConflicto)
+        {
+            ws.Cell($"A{row}").Value = nombresTipos[tipo];
+            ws.Cell($"B{row}").FormulaA1 = $"=COUNTIF('🚨 Alertas'!$B:$B,\"{tipo}\")";
+            ws.Cell($"C{row}").FormulaA1 = $"=IF(SUM($B$2:$B$100)>0,B{row}/SUM($B$2:$B$100),0)";
+            ws.Cell($"C{row}").Style.NumberFormat.Format = "0.0%";
+            row++;
+        }
+        
+        row += 2;
+        
+        // Instrucciones para actualizar
+        ws.Cell($"A{row}").Value = "💡 NOTA: Esta hoja se actualiza automáticamente basándose en los datos de la hoja '🚨 Alertas'.";
+        ws.Range($"A{row}:F{row}").Merge().Style
+            .Font.SetItalic()
+            .Fill.SetBackgroundColor(XLColor.LightYellow);
+        
+        row++;
+        ws.Cell($"A{row}").Value = "Para refrescar las validaciones, vuelva a ejecutar el programa o modifique manualmente los datos.";
+        ws.Range($"A{row}:F{row}").Merge().Style.Font.SetItalic();
         
         ws.Columns().AdjustToContents();
     }
@@ -741,27 +858,47 @@ public class ExcelGeneratorService
         
         row += 2;
         
-        // Resumen de disponibilidad
+        // Resumen de disponibilidad - AHORA CON FÓRMULAS DINÁMICAS
         ws.Cell($"A{row}").Value = "RESUMEN DE DISPONIBILIDAD";
-        ws.Range($"A{row}:D{row}").Merge().Style
+        ws.Range($"A{row}:E{row}").Merge().Style
             .Font.SetBold().Font.SetFontSize(12)
             .Fill.SetBackgroundColor(XLColor.LightBlue);
         
         row++;
         ws.Cell($"A{row}").Value = "Empleado";
-        ws.Cell($"B{row}").Value = "Asignaciones";
+        ws.Cell($"B{row}").Value = "Asignaciones Activas";
         ws.Cell($"C{row}").Value = "Viajes";
         ws.Cell($"D{row}").Value = "Vacaciones";
-        ws.Range($"A{row}:D{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
+        ws.Cell($"E{row}").Value = "Turnos Soporte";
+        ws.Range($"A{row}:E{row}").Style.Font.SetBold().Fill.SetBackgroundColor(XLColor.LightGray);
         
         row++;
-        foreach (var empleado in data.Empleados.Where(e => e.Activo).Take(15))
+        int startDataRow = row;
+        
+        foreach (var empleado in data.Empleados.Where(e => e.Activo))
         {
             ws.Cell($"A{row}").Value = $"{empleado.Nombre} {empleado.Apellido}";
-            ws.Cell($"B{row}").Value = data.Asignaciones.Count(a => a.EmpleadoId == empleado.Id && a.Activa);
-            ws.Cell($"C{row}").Value = data.Viajes.Count(v => v.EmpleadoId == empleado.Id);
-            ws.Cell($"D{row}").Value = data.Vacaciones.Count(v => v.EmpleadoId == empleado.Id);
+            
+            // Fórmula para contar asignaciones activas
+            ws.Cell($"B{row}").FormulaA1 = $"=COUNTIFS('🔄 Asignaciones'!$B:$B,A{row},'🔄 Asignaciones'!$G:$G,\"Sí\")";
+            
+            // Fórmula para contar viajes
+            ws.Cell($"C{row}").FormulaA1 = $"=COUNTIF('✈️ Viajes'!$B:$B,A{row})";
+            
+            // Fórmula para contar vacaciones
+            ws.Cell($"D{row}").FormulaA1 = $"=COUNTIF('🏖️ Vacaciones'!$B:$B,A{row})";
+            
+            // Fórmula para contar turnos de soporte
+            ws.Cell($"E{row}").FormulaA1 = $"=COUNTIF('🛠️ Turnos Soporte'!$B:$B,A{row})";
+            
             row++;
+        }
+        
+        // Crear tabla con los datos
+        if (row > startDataRow)
+        {
+            var tabla = ws.Range($"A{startDataRow - 1}:E{row - 1}").CreateTable();
+            tabla.Theme = XLTableTheme.TableStyleMedium9;
         }
         
         ws.Columns().AdjustToContents();
