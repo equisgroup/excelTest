@@ -1,0 +1,13 @@
+bin/
+obj/
+*.db
+logs/
+.vs/
+.idea/
+*.user
+*.suo
+Reportes/
+.vscode/
+*.swp
+*~
+*.DotSettings.user

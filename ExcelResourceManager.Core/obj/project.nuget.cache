@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "9xiS5y8XJWk=",
+  "dgSpecHash": "OvWDRuSndbA=",
   "success": true,
   "projectFilePath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Core/ExcelResourceManager.Core.csproj",
   "expectedPackageFiles": [
+    "/home/runner/.nuget/packages/litedb/5.0.19/litedb.5.0.19.nupkg.sha512",
     "/home/runner/.nuget/packages/system.reactive/6.0.0/system.reactive.6.0.0.nupkg.sha512"
   ],
   "logs": []
