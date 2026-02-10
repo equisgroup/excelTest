@@ -73,6 +73,7 @@ public partial class App : Application
 
         // Registrar ViewModels como transient
         services.AddTransient<MainWindowViewModel>();
+        services.AddTransient<VacacionesViewModel>();
 
         // Construir el proveedor de servicios
         _serviceProvider = services.BuildServiceProvider();
