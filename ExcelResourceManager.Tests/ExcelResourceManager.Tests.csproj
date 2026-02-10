@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExcelResourceManager.Core\ExcelResourceManager.Core.csproj" />
+    <ProjectReference Include="..\ExcelResourceManager.Data\ExcelResourceManager.Data.csproj" />
   </ItemGroup>
 
 </Project>
