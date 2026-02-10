@@ -1,0 +1,206 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ExcelResourceManager.Desktop.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
+             x:Class="ExcelResourceManager.Desktop.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+    
+    <Design.DataContext>
+        <vm:DashboardViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="20">
+        <!-- Fila 0: ProgressBar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="{Binding EsCargando}"
+                     IsVisible="{Binding EsCargando}"
+                     Height="4"
+                     Margin="0,0,0,15"/>
+
+        <!-- Fila 1: KPIs -->
+        <Grid Grid.Row="1" 
+              ColumnDefinitions="*,*,*"
+              RowDefinitions="Auto,Auto"
+              Margin="0,0,0,20">
+            
+            <!-- Fila 0, Columna 0: Total Empleados -->
+            <Border Grid.Row="0" Grid.Column="0" 
+                    Background="#E3F2FD" 
+                    BorderBrush="#2196F3" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="0,0,10,10">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding TotalEmpleados}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#1976D2"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Total Empleados" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Fila 0, Columna 1: Empleados Activos -->
+            <Border Grid.Row="0" Grid.Column="1" 
+                    Background="#E8F5E9" 
+                    BorderBrush="#4CAF50" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="5,0,5,10">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding EmpleadosActivos}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#388E3C"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Empleados Activos" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Fila 0, Columna 2: Total Clientes -->
+            <Border Grid.Row="0" Grid.Column="2" 
+                    Background="#FFF3E0" 
+                    BorderBrush="#FF9800" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="10,0,0,10">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding TotalClientes}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#F57C00"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Total Clientes" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Fila 1, Columna 0: Clientes Activos -->
+            <Border Grid.Row="1" Grid.Column="0" 
+                    Background="#F3E5F5" 
+                    BorderBrush="#9C27B0" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="0,0,10,0">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding ClientesActivos}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#7B1FA2"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Clientes Activos" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Fila 1, Columna 1: Total Conflictos -->
+            <Border Grid.Row="1" Grid.Column="1" 
+                    Background="#FFF9C4" 
+                    BorderBrush="#FBC02D" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="5,0,5,0">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding TotalConflictos}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#F57F17"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Total Conflictos" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Fila 1, Columna 2: Conflictos Críticos -->
+            <Border Grid.Row="1" Grid.Column="2" 
+                    Background="#FFEBEE" 
+                    BorderBrush="#F44336" 
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Padding="20"
+                    Margin="10,0,0,0">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding ConflictosCriticos}" 
+                               FontSize="48" 
+                               FontWeight="Bold"
+                               Foreground="#D32F2F"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Conflictos Críticos" 
+                               FontSize="16"
+                               Foreground="#424242"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Fila 2: Próximas Vacaciones -->
+        <Border Grid.Row="2"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="15">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0"
+                           Text="Próximas Vacaciones (30 días)"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Margin="0,0,0,15"/>
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding ProximasVacaciones}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          GridLinesVisibility="All"
+                          BorderThickness="1"
+                          BorderBrush="#DDDDDD">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Empleado"
+                                          Binding="{Binding EmpleadoNombre}"
+                                          Width="*"/>
+
+                        <DataGridTextColumn Header="Fecha Inicio"
+                                          Binding="{Binding FechaInicio, StringFormat='{}{0:dd/MM/yyyy}'}"
+                                          Width="120"/>
+
+                        <DataGridTextColumn Header="Fecha Fin"
+                                          Binding="{Binding FechaFin, StringFormat='{}{0:dd/MM/yyyy}'}"
+                                          Width="120"/>
+
+                        <DataGridTextColumn Header="Días Hábiles"
+                                          Binding="{Binding DiasHabiles}"
+                                          Width="110"/>
+
+                        <DataGridTextColumn Header="Estado"
+                                          Binding="{Binding Estado}"
+                                          Width="120"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
