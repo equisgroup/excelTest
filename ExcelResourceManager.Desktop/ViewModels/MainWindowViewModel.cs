@@ -2,6 +2,7 @@
 using System.Reactive;
 using System.Reactive.Linq;
 using ReactiveUI;
+using Serilog;
 
 namespace ExcelResourceManager.Desktop.ViewModels;
 
@@ -9,6 +10,7 @@ public class MainWindowViewModel : ViewModelBase
 {
     private ViewModelBase? _currentView;
     private bool _isTestMode = true;
+    private string _modoActual = "Modo: Prueba";
 
     public ViewModelBase? CurrentView
     {
@@ -22,7 +24,11 @@ public class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isTestMode, value);
     }
 
-    public string ModoActual => IsTestMode ? "Modo: Prueba" : "Modo: Producción";
+    public string ModoActual
+    {
+        get => _modoActual;
+        private set => this.RaiseAndSetIfChanged(ref _modoActual, value);
+    }
 
     public ReactiveCommand<string, Unit> NavigateCommand { get; }
 
@@ -30,12 +36,19 @@ public class MainWindowViewModel : ViewModelBase
     {
         NavigateCommand = ReactiveCommand.Create<string>(Navigate);
 
-        // Observar cambios en IsTestMode
+        // Observar cambios en IsTestMode y actualizar ModoActual
         this.WhenAnyValue(x => x.IsTestMode)
-            .Skip(1) // Saltar el valor inicial
             .Subscribe(isTest =>
             {
-                Console.WriteLine($"Modo cambiado a: {(isTest ? "Prueba" : "Producción")}");
+                ModoActual = isTest ? "Modo: Prueba" : "Modo: Producción";
+            });
+
+        // Observar cambios en IsTestMode para logging (saltando el valor inicial)
+        this.WhenAnyValue(x => x.IsTestMode)
+            .Skip(1)
+            .Subscribe(isTest =>
+            {
+                Log.Information("Modo cambiado a: {Modo}", isTest ? "Prueba" : "Producción");
                 // Aquí se podría recargar la base de datos según el modo
             });
 
@@ -59,6 +72,6 @@ public class MainWindowViewModel : ViewModelBase
             _ => CurrentView
         };
 
-        Console.WriteLine($"Navegando a: {destination}");
+        Log.Information("Navegando a: {Destino}", destination);
     }
 }
