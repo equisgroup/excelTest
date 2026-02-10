@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using ExcelResourceManager.Core.Repositories;
 using LiteDB;
 
 namespace ExcelResourceManager.Data.Repositories;

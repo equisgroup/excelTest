@@ -2329,7 +2329,8 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "ExcelResourceManager.Data": "1.0.0",
+          "LiteDB": "5.0.19",
+          "Serilog": "3.1.1",
           "System.Reactive": "6.0.0"
         },
         "compile": {
@@ -2343,6 +2344,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "ExcelResourceManager.Core": "1.0.0",
           "LiteDB": "5.0.19"
         },
         "compile": {
@@ -2357,7 +2359,8 @@
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
           "ClosedXML": "0.102.3",
-          "ExcelResourceManager.Core": "1.0.0"
+          "ExcelResourceManager.Core": "1.0.0",
+          "Serilog": "3.1.1"
         },
         "compile": {
           "bin/placeholder/ExcelResourceManager.Reports.dll": {}
@@ -7253,7 +7256,7 @@
     ]
   },
   "packageFolders": {
-    "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages": {}
+    "/home/runner/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
@@ -7261,7 +7264,7 @@
       "projectUniqueName": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj",
       "projectName": "ExcelResourceManager.Desktop",
       "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj",
-      "packagesPath": "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages",
+      "packagesPath": "/home/runner/.nuget/packages/",
       "outputPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Desktop/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
@@ -7357,20 +7360,6 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.23, 8.0.23]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.linux-x64",
-            "version": "[8.0.23, 8.0.23]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.23, 8.0.23]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"

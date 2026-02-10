@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace ExcelResourceManager.Data.Repositories;
+namespace ExcelResourceManager.Core.Repositories;
 
 public interface IRepository<T> where T : class
 {

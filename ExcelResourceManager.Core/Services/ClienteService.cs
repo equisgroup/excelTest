@@ -1,5 +1,5 @@
 using ExcelResourceManager.Core.Models;
-using ExcelResourceManager.Data.Repositories;
+using ExcelResourceManager.Core.Repositories;
 using Serilog;
 
 namespace ExcelResourceManager.Core.Services;

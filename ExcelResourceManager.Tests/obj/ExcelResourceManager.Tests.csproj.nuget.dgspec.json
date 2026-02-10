@@ -10,87 +10,8 @@
         "projectUniqueName": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Core/ExcelResourceManager.Core.csproj",
         "projectName": "ExcelResourceManager.Core",
         "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Core/ExcelResourceManager.Core.csproj",
-        "packagesPath": "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages",
+        "packagesPath": "/home/runner/.nuget/packages/",
         "outputPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Core/obj/",
-        "projectStyle": "PackageReference",
-        "configFilePaths": [
-          "/home/runner/.nuget/NuGet/NuGet.Config"
-        ],
-        "originalTargetFrameworks": [
-          "net8.0"
-        ],
-        "sources": {
-          "https://api.nuget.org/v3/index.json": {}
-        },
-        "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
-            "projectReferences": {
-              "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj": {
-                "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj"
-              }
-            }
-          }
-        },
-        "warningProperties": {
-          "warnAsError": [
-            "NU1605"
-          ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "10.0.100"
-      },
-      "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
-          "dependencies": {
-            "System.Reactive": {
-              "target": "Package",
-              "version": "[6.0.0, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            }
-          ],
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.102/PortableRuntimeIdentifierGraph.json"
-        }
-      }
-    },
-    "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj": {
-      "version": "1.0.0",
-      "restore": {
-        "projectUniqueName": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj",
-        "projectName": "ExcelResourceManager.Data",
-        "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/ExcelResourceManager.Data.csproj",
-        "packagesPath": "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages",
-        "outputPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Data/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/runner/.nuget/NuGet/NuGet.Config"
@@ -126,6 +47,14 @@
             "LiteDB": {
               "target": "Package",
               "version": "[5.0.19, )"
+            },
+            "Serilog": {
+              "target": "Package",
+              "version": "[3.1.1, )"
+            },
+            "System.Reactive": {
+              "target": "Package",
+              "version": "[6.0.0, )"
             }
           },
           "imports": [
@@ -139,16 +68,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
@@ -164,7 +83,7 @@
         "projectUniqueName": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Tests/ExcelResourceManager.Tests.csproj",
         "projectName": "ExcelResourceManager.Tests",
         "projectPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Tests/ExcelResourceManager.Tests.csproj",
-        "packagesPath": "/home/runner/work/excelTest/.codeql-scratch/dbs/csharp/working/packages",
+        "packagesPath": "/home/runner/.nuget/packages/",
         "outputPath": "/home/runner/work/excelTest/excelTest/ExcelResourceManager.Tests/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
@@ -238,16 +157,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.23, 8.0.23]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"

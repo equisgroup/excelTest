@@ -1,10 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ExcelResourceManager.Data\ExcelResourceManager.Data.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <PackageReference Include="LiteDB" Version="5.0.19" />
+    <PackageReference Include="Serilog" Version="3.1.1" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
   </ItemGroup>
 

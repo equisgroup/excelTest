@@ -1,4 +1,5 @@
 using ExcelResourceManager.Core.Models;
+using ExcelResourceManager.Core.Repositories;
 
 namespace ExcelResourceManager.Data.Repositories;
 

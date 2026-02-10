@@ -1,6 +1,6 @@
 using ExcelResourceManager.Core.Models;
 
-namespace ExcelResourceManager.Data.Repositories;
+namespace ExcelResourceManager.Core.Repositories;
 
 public interface IUnitOfWork : IDisposable
 {
