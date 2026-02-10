@@ -5,6 +5,7 @@ using Avalonia.Data.Core.Plugins;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Markup.Xaml;
 using ExcelResourceManager.Desktop.ViewModels;
 using ExcelResourceManager.Desktop.Views;
@@ -50,8 +51,8 @@ public partial class App : Application
         var connectionString = configuration.GetConnectionString("TestDatabase") 
             ?? "Filename=database-test.db;Connection=shared";
 
-        // Registrar contexto de base de datos
-        services.AddSingleton(sp => new LiteDbContext(connectionString));
+        // Registrar contexto de base de datos como scoped para evitar problemas de concurrencia
+        services.AddScoped(sp => new LiteDbContext(connectionString));
 
         // Registrar Unit of Work como scoped
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -93,14 +94,14 @@ public partial class App : Application
             {
                 Log.Information("Base de datos no encontrada. Iniciando proceso de carga de datos de prueba...");
                 
-                // Crear un scope para obtener el servicio de datos de prueba
-                using (var scope = _serviceProvider!.CreateScope())
+                // Usar Task.Run para evitar bloquear el hilo de UI durante la inicialización
+                Task.Run(async () =>
                 {
+                    using var scope = _serviceProvider!.CreateScope();
                     var dataSeedService = scope.ServiceProvider.GetRequiredService<IDataSeedService>();
-                    dataSeedService.SeedTestDataAsync().Wait();
-                }
-                
-                Log.Information("Datos de prueba cargados exitosamente");
+                    await dataSeedService.SeedTestDataAsync();
+                    Log.Information("Datos de prueba cargados exitosamente");
+                }).Wait();
             }
 
             // Crear ventana principal con ViewModel desde DI
