@@ -948,16 +948,17 @@ public class ExcelGeneratorService
         
         var hojas = new[]
         {
-            "📊 Dashboard Gerencial - KPIs y métricas principales",
+            "📊 Dashboard Gerencial - KPIs y métricas principales con fórmulas dinámicas",
             "🚨 Alertas - Sistema de alertas y conflictos detectados",
-            "👥 Clientes - Listado completo de clientes",
-            "👨‍💼 Empleados - Listado completo de empleados",
-            "🔄 Asignaciones - Historial de asignaciones empleado-cliente",
-            "🏖️ Vacaciones - Registro de vacaciones",
-            "✈️ Viajes - Registro de viajes",
-            "🛠️ Turnos Soporte - Planificación de turnos semanales",
-            "📅 Feriados - Catálogo de feriados por país",
-            "📊 Dashboard Ocupación - Vista de ocupación de empleados",
+            "📈 Análisis Alertas - Análisis dinámico de conflictos por empleado y tipo",
+            "👥 Clientes - Listado completo de clientes (editable)",
+            "👨‍💼 Empleados - Listado completo de empleados (editable)",
+            "🔄 Asignaciones - Historial con detección automática de conflictos",
+            "🏖️ Vacaciones - Registro con detección de conflictos de viajes y soporte",
+            "✈️ Viajes - Registro con detección de feriados y conflictos",
+            "🛠️ Turnos Soporte - Planificación completa de 52 semanas (año 2026)",
+            "📅 Feriados - Catálogo de feriados por país (EC y PY)",
+            "📊 Dashboard Ocupación - Vista dinámica de ocupación de empleados",
             "ℹ️ Instrucciones - Esta hoja"
         };
         
