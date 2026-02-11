@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive;
 using System.Reactive.Linq;
+using Avalonia.Threading;
 using ReactiveUI;
 using Serilog;
 
@@ -43,13 +44,23 @@ public class MainWindowViewModel : ViewModelBase
                 ModoActual = isTest ? "Modo: Prueba" : "Modo: Producción";
             });
 
-        // Observar cambios en IsTestMode para logging (saltando el valor inicial)
+        // Observar cambios en IsTestMode para recargar la vista actual
         this.WhenAnyValue(x => x.IsTestMode)
             .Skip(1)
+            .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(isTest =>
             {
                 Log.Information("Modo cambiado a: {Modo}", isTest ? "Prueba" : "Producción");
-                // Aquí se podría recargar la base de datos según el modo
+                
+                // Recargar la vista actual para reflejar los datos del nuevo modo
+                if (CurrentView is DashboardViewModel)
+                {
+                    Navigate("Dashboard");
+                }
+                else if (CurrentView is VacacionesViewModel)
+                {
+                    Navigate("Vacaciones");
+                }
             });
 
         // Cargar Dashboard por defecto
@@ -58,21 +69,25 @@ public class MainWindowViewModel : ViewModelBase
 
     private void Navigate(string destination)
     {
-        CurrentView = destination switch
+        // Asegurarse de que la navegación ocurra en el hilo de UI
+        Dispatcher.UIThread.Post(() =>
         {
-            "Dashboard" => CreateViewModel<DashboardViewModel>(),
-            "Vacaciones" => CreateViewModel<VacacionesViewModel>(),
-            "Empleados" => new EmpleadosViewModel(),
-            "Clientes" => new ClientesViewModel(),
-            "Viajes" => new ViajesViewModel(),
-            "Soporte" => new TurnosSoporteViewModel(),
-            "Feriados" => new FeriadosViewModel(),
-            "Conflictos" => new ConflictosViewModel(),
-            "Reportes" => new ReportesViewModel(),
-            _ => CurrentView
-        };
+            CurrentView = destination switch
+            {
+                "Dashboard" => CreateViewModel<DashboardViewModel>(),
+                "Vacaciones" => CreateViewModel<VacacionesViewModel>(),
+                "Empleados" => new EmpleadosViewModel(),
+                "Clientes" => new ClientesViewModel(),
+                "Viajes" => new ViajesViewModel(),
+                "Soporte" => new TurnosSoporteViewModel(),
+                "Feriados" => new FeriadosViewModel(),
+                "Conflictos" => new ConflictosViewModel(),
+                "Reportes" => new ReportesViewModel(),
+                _ => CurrentView
+            };
 
-        Log.Information("Navegando a: {Destino}", destination);
+            Log.Information("Navegando a: {Destino}", destination);
+        });
     }
 
     private T CreateViewModel<T>() where T : ViewModelBase

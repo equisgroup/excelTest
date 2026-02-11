@@ -25,6 +25,7 @@ public partial class App : Application
 {
     // Proveedor de servicios para inyección de dependencias
     private static IServiceProvider? _serviceProvider;
+    private static IServiceScopeFactory? _scopeFactory;
 
     public override void Initialize()
     {
@@ -78,6 +79,7 @@ public partial class App : Application
 
         // Construir el proveedor de servicios
         _serviceProvider = services.BuildServiceProvider();
+        _scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
 
         Log.Information("Aplicación inicializada correctamente con inyección de dependencias");
     }
@@ -157,7 +159,27 @@ public partial class App : Application
             throw new InvalidOperationException("El proveedor de servicios no ha sido inicializado");
         }
 
+        // Si es un ViewModel, crearlo con un scope específico
+        if (typeof(T).Name.EndsWith("ViewModel"))
+        {
+            var scope = _scopeFactory!.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<T>();
+        }
+
         return _serviceProvider.GetRequiredService<T>();
+    }
+    
+    /// <summary>
+    /// Crea un scope para servicios scoped
+    /// </summary>
+    public static IServiceScope CreateScope()
+    {
+        if (_scopeFactory == null)
+        {
+            throw new InvalidOperationException("El proveedor de servicios no ha sido inicializado");
+        }
+        
+        return _scopeFactory.CreateScope();
     }
 
     private void DisableAvaloniaDataAnnotationValidation()
