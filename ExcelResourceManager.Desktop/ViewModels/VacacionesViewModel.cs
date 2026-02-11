@@ -123,9 +123,14 @@ public class VacacionesViewModel : ViewModelBase
             x => x.FechaFin,
             (empleado, inicio, fin) => empleado != null && inicio.HasValue && fin.HasValue);
 
-        GuardarCommand = ReactiveCommand.CreateFromTask(GuardarAsync, canGuardar);
+        GuardarCommand = ReactiveCommand.CreateFromTask(
+            GuardarAsync, 
+            canGuardar,
+            RxApp.MainThreadScheduler);
         CancelarCommand = ReactiveCommand.Create(Cancelar);
-        CargarDatosCommand = ReactiveCommand.CreateFromTask(CargarDatosAsync);
+        CargarDatosCommand = ReactiveCommand.CreateFromTask(
+            CargarDatosAsync,
+            outputScheduler: RxApp.MainThreadScheduler);
 
         // Configurar validación reactiva
         this.WhenAnyValue(
@@ -137,19 +142,24 @@ public class VacacionesViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(async _ => await ValidarEnTiempoRealAsync());
 
-        // Cargar datos iniciales solo si los servicios están disponibles
-        if (_vacacionService != null && _empleadoService != null)
-        {
-            CargarDatosCommand.Execute().Subscribe();
-        }
-
         Log.Information("VacacionesViewModel inicializado");
     }
 
     public VacacionesViewModel() : this(null!, null!, null!, null!, null!)
     {
         // Constructor para soporte de diseñador XAML
-        // Los comandos se inicializan con operaciones vacías para evitar NullReferenceExceptions
+    }
+    
+    /// <summary>
+    /// Inicializa el ViewModel cargando los datos.
+    /// Debe ser llamado después de que el ViewModel esté en el contexto de UI.
+    /// </summary>
+    public void Initialize()
+    {
+        if (_vacacionService != null && _empleadoService != null)
+        {
+            CargarDatosCommand.Execute().Subscribe();
+        }
     }
 
     private async Task ValidarEnTiempoRealAsync()

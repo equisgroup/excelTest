@@ -90,13 +90,10 @@ public class DashboardViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
         _validationService = validationService;
 
-        CargarDatosCommand = ReactiveCommand.CreateFromTask(CargarDatosAsync);
-
-        // Cargar datos iniciales
-        if (_empleadoService != null && _clienteService != null)
-        {
-            CargarDatosCommand.Execute().Subscribe();
-        }
+        // Crear comando con scheduler de UI thread
+        CargarDatosCommand = ReactiveCommand.CreateFromTask(
+            CargarDatosAsync,
+            outputScheduler: RxApp.MainThreadScheduler);
 
         Log.Information("DashboardViewModel inicializado");
     }
@@ -104,6 +101,18 @@ public class DashboardViewModel : ViewModelBase
     public DashboardViewModel() : this(null!, null!, null!, null!)
     {
         // Constructor para soporte de diseñador XAML
+    }
+    
+    /// <summary>
+    /// Inicializa el ViewModel cargando los datos.
+    /// Debe ser llamado después de que el ViewModel esté en el contexto de UI.
+    /// </summary>
+    public void Initialize()
+    {
+        if (_empleadoService != null && _clienteService != null)
+        {
+            CargarDatosCommand.Execute().Subscribe();
+        }
     }
 
     private async Task CargarDatosAsync()

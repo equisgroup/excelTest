@@ -72,7 +72,7 @@ public class MainWindowViewModel : ViewModelBase
         // Asegurarse de que la navegación ocurra en el hilo de UI
         Dispatcher.UIThread.Post(() =>
         {
-            CurrentView = destination switch
+            var newView = destination switch
             {
                 "Dashboard" => CreateViewModel<DashboardViewModel>(),
                 "Vacaciones" => CreateViewModel<VacacionesViewModel>(),
@@ -85,6 +85,22 @@ public class MainWindowViewModel : ViewModelBase
                 "Reportes" => new ReportesViewModel(),
                 _ => CurrentView
             };
+
+            // Inicializar ViewModels que requieren carga de datos
+            if (newView is DashboardViewModel dashboardVM)
+            {
+                CurrentView = dashboardVM;
+                dashboardVM.Initialize();
+            }
+            else if (newView is VacacionesViewModel vacacionesVM)
+            {
+                CurrentView = vacacionesVM;
+                vacacionesVM.Initialize();
+            }
+            else
+            {
+                CurrentView = newView;
+            }
 
             Log.Information("Navegando a: {Destino}", destination);
         });
