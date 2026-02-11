@@ -15,10 +15,11 @@ namespace ExcelResourceManager.Desktop.ViewModels;
 
 public class DashboardViewModel : ViewModelBase
 {
-    private readonly IEmpleadoService _empleadoService;
-    private readonly IClienteService _clienteService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidationService _validationService;
+    private readonly IEmpleadoService? _empleadoService;
+    private readonly IClienteService? _clienteService;
+    private readonly IUnitOfWork? _unitOfWork;
+    private readonly IValidationService? _validationService;
+    private bool _isTestMode;
 
     private int _totalEmpleados;
     private int _empleadosActivos;
@@ -79,28 +80,29 @@ public class DashboardViewModel : ViewModelBase
 
     public ReactiveCommand<Unit, Unit> CargarDatosCommand { get; }
 
-    public DashboardViewModel(
-        IEmpleadoService empleadoService,
-        IClienteService clienteService,
-        IUnitOfWork unitOfWork,
-        IValidationService validationService)
+    public DashboardViewModel(bool isTestMode = true)
     {
-        _empleadoService = empleadoService;
-        _clienteService = clienteService;
-        _unitOfWork = unitOfWork;
-        _validationService = validationService;
+        _isTestMode = isTestMode;
+        
+        // Crear servicios con el modo actual
+        try
+        {
+            _empleadoService = App.CreateService<IEmpleadoService>(isTestMode);
+            _clienteService = App.CreateService<IClienteService>(isTestMode);
+            _unitOfWork = App.CreateService<IUnitOfWork>(isTestMode);
+            _validationService = App.CreateService<IValidationService>(isTestMode);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al crear servicios para DashboardViewModel en modo {Modo}", isTestMode ? "Test" : "Producción");
+        }
 
         // Crear comando con scheduler de UI thread
         CargarDatosCommand = ReactiveCommand.CreateFromTask(
             CargarDatosAsync,
             outputScheduler: RxApp.MainThreadScheduler);
 
-        Log.Information("DashboardViewModel inicializado");
-    }
-
-    public DashboardViewModel() : this(null!, null!, null!, null!)
-    {
-        // Constructor para soporte de diseñador XAML
+        Log.Information("DashboardViewModel inicializado en modo {Modo}", isTestMode ? "Test" : "Producción");
     }
     
     /// <summary>

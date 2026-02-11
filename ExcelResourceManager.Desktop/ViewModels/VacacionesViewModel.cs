@@ -16,11 +16,12 @@ namespace ExcelResourceManager.Desktop.ViewModels;
 
 public class VacacionesViewModel : ViewModelBase
 {
-    private readonly IVacacionService _vacacionService;
-    private readonly IValidationService _validationService;
-    private readonly IEmpleadoService _empleadoService;
-    private readonly IFeriadoService _feriadoService;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IVacacionService? _vacacionService;
+    private readonly IValidationService? _validationService;
+    private readonly IEmpleadoService? _empleadoService;
+    private readonly IFeriadoService? _feriadoService;
+    private readonly IUnitOfWork? _unitOfWork;
+    private bool _isTestMode;
 
     private ObservableCollection<VacacionDisplay> _vacaciones = new();
     private ObservableCollection<Empleado> _empleados = new();
@@ -104,18 +105,23 @@ public class VacacionesViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> CancelarCommand { get; }
     public ReactiveCommand<Unit, Unit> CargarDatosCommand { get; }
 
-    public VacacionesViewModel(
-        IVacacionService vacacionService,
-        IValidationService validationService,
-        IEmpleadoService empleadoService,
-        IFeriadoService feriadoService,
-        IUnitOfWork unitOfWork)
+    public VacacionesViewModel(bool isTestMode = true)
     {
-        _vacacionService = vacacionService;
-        _validationService = validationService;
-        _empleadoService = empleadoService;
-        _feriadoService = feriadoService;
-        _unitOfWork = unitOfWork;
+        _isTestMode = isTestMode;
+        
+        // Crear servicios con el modo actual
+        try
+        {
+            _unitOfWork = App.CreateService<IUnitOfWork>(isTestMode);
+            _empleadoService = App.CreateService<IEmpleadoService>(isTestMode);
+            _feriadoService = App.CreateService<IFeriadoService>(isTestMode);
+            _validationService = App.CreateService<IValidationService>(isTestMode);
+            _vacacionService = App.CreateService<IVacacionService>(isTestMode);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error al crear servicios para VacacionesViewModel en modo {Modo}", isTestMode ? "Test" : "Producción");
+        }
 
         var canGuardar = this.WhenAnyValue(
             x => x.EmpleadoSeleccionado,
@@ -142,12 +148,7 @@ public class VacacionesViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(async _ => await ValidarEnTiempoRealAsync());
 
-        Log.Information("VacacionesViewModel inicializado");
-    }
-
-    public VacacionesViewModel() : this(null!, null!, null!, null!, null!)
-    {
-        // Constructor para soporte de diseñador XAML
+        Log.Information("VacacionesViewModel inicializado en modo {Modo}", isTestMode ? "Test" : "Producción");
     }
     
     /// <summary>
