@@ -90,12 +90,38 @@ public partial class App : Application
             // Más info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
-            // Verificar si existe la base de datos de prueba
+            // Verificar si existe la base de datos de prueba y si tiene datos
             var dbPath = "database-test.db";
-            if (!File.Exists(dbPath))
+            var needsSeeding = !File.Exists(dbPath);
+            
+            if (!needsSeeding)
+            {
+                // Verificar si la base de datos está vacía
+                try
+                {
+                    using var scope = _serviceProvider!.CreateScope();
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                    var empleados = unitOfWork.Empleados.GetAllAsync().Result;
+                    needsSeeding = !empleados.Any();
+                    
+                    if (needsSeeding)
+                    {
+                        Log.Information("Base de datos existe pero está vacía. Se cargarán datos de prueba.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error al verificar contenido de la base de datos. Se asume que necesita datos.");
+                    needsSeeding = true;
+                }
+            }
+            else
             {
                 Log.Information("Base de datos no encontrada. Iniciando proceso de carga de datos de prueba...");
-                
+            }
+            
+            if (needsSeeding)
+            {
                 // Usar Task.Run para evitar bloquear el hilo de UI durante la inicialización
                 Task.Run(async () =>
                 {

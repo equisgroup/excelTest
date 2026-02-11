@@ -60,8 +60,8 @@ public class MainWindowViewModel : ViewModelBase
     {
         CurrentView = destination switch
         {
-            "Dashboard" => new DashboardViewModel(),
-            "Vacaciones" => CreateVacacionesViewModel(),
+            "Dashboard" => CreateViewModel<DashboardViewModel>(),
+            "Vacaciones" => CreateViewModel<VacacionesViewModel>(),
             "Empleados" => new EmpleadosViewModel(),
             "Clientes" => new ClientesViewModel(),
             "Viajes" => new ViajesViewModel(),
@@ -75,16 +75,16 @@ public class MainWindowViewModel : ViewModelBase
         Log.Information("Navegando a: {Destino}", destination);
     }
 
-    private VacacionesViewModel CreateVacacionesViewModel()
+    private T CreateViewModel<T>() where T : ViewModelBase
     {
         try
         {
-            return App.GetService<VacacionesViewModel>();
+            return App.GetService<T>();
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "No se pudo crear VacacionesViewModel con DI, usando constructor por defecto");
-            return new VacacionesViewModel();
+            Log.Warning(ex, "No se pudo crear {ViewModelType} con DI, usando constructor por defecto", typeof(T).Name);
+            return (T)Activator.CreateInstance(typeof(T))!;
         }
     }
 }
