@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using ExcelResourceManager.Core.Enums;
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Repositories;
@@ -124,29 +125,21 @@ public class DashboardViewModel : ViewModelBase
 
         try
         {
-            EsCargando = true;
+            // Actualizar estado de carga en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() => EsCargando = true);
+            
             Log.Information("Cargando datos del dashboard");
 
-            // Cargar empleados
+            // Cargar datos en background
             var todosEmpleados = await _empleadoService.ObtenerTodosAsync();
             var empleadosActivos = await _empleadoService.ObtenerActivosAsync();
-            TotalEmpleados = todosEmpleados.Count;
-            EmpleadosActivos = empleadosActivos.Count;
-
-            // Cargar clientes
             var todosClientes = await _clienteService.ObtenerTodosAsync();
             var clientesActivos = await _clienteService.ObtenerActivosAsync();
-            TotalClientes = todosClientes.Count;
-            ClientesActivos = clientesActivos.Count;
-
-            // Cargar conflictos
             var conflictos = await _unitOfWork.Conflictos.GetAllAsync();
-            var conflictosNoResueltos = conflictos.Where(c => !c.Resuelto).ToList();
-            TotalConflictos = conflictosNoResueltos.Count;
-            ConflictosCriticos = conflictosNoResueltos.Count(c => c.Nivel == NivelConflicto.Critico);
-
-            // Cargar próximas vacaciones (próximos 30 días)
             var vacaciones = await _unitOfWork.Vacaciones.GetAllAsync();
+            
+            // Procesar datos
+            var conflictosNoResueltos = conflictos.Where(c => !c.Resuelto).ToList();
             var fechaHoy = DateTime.Today;
             var fechaLimite = fechaHoy.AddDays(30);
 
@@ -166,7 +159,17 @@ public class DashboardViewModel : ViewModelBase
                 });
             }
 
-            ProximasVacaciones = new ObservableCollection<VacacionDisplay>(vacacionesDisplay);
+            // Actualizar TODAS las propiedades en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                TotalEmpleados = todosEmpleados.Count;
+                EmpleadosActivos = empleadosActivos.Count;
+                TotalClientes = todosClientes.Count;
+                ClientesActivos = clientesActivos.Count;
+                TotalConflictos = conflictosNoResueltos.Count;
+                ConflictosCriticos = conflictosNoResueltos.Count(c => c.Nivel == NivelConflicto.Critico);
+                ProximasVacaciones = new ObservableCollection<VacacionDisplay>(vacacionesDisplay);
+            });
 
             Log.Information(
                 "Dashboard actualizado - Empleados: {TotalEmpleados}/{EmpleadosActivos}, Clientes: {TotalClientes}/{ClientesActivos}, Conflictos: {TotalConflictos}/{ConflictosCriticos}",
@@ -178,7 +181,8 @@ public class DashboardViewModel : ViewModelBase
         }
         finally
         {
-            EsCargando = false;
+            // Actualizar estado de carga en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() => EsCargando = false);
         }
     }
 

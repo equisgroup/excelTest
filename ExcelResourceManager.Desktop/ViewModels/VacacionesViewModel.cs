@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using ExcelResourceManager.Core.Enums;
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Repositories;
@@ -174,7 +175,8 @@ public class VacacionesViewModel : ViewModelBase
 
         try
         {
-            EstaValidando = true;
+            // Actualizar estado en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() => EstaValidando = true);
 
             // Crear vacación temporal para validación
             var vacacionTemp = new Vacacion
@@ -187,31 +189,31 @@ public class VacacionesViewModel : ViewModelBase
                 Observaciones = Observaciones
             };
 
-            // Validar conflictos
+            // Validar conflictos y calcular días hábiles en background
             var conflictos = await _validationService.ValidarVacacionAsync(vacacionTemp);
-            Conflictos = new ObservableCollection<Conflicto>(conflictos);
-
-            // Calcular días hábiles
-            DiasHabiles = await _feriadoService.CalcularDiasHabilesAsync(
+            var diasHabiles = await _feriadoService.CalcularDiasHabilesAsync(
                 FechaInicio.Value,
                 FechaFin.Value,
                 EmpleadoSeleccionado.UbicacionId);
 
-            // Actualizar alerta
+            // Procesar resultados
             var conflictosCriticos = conflictos.Where(c => c.Nivel == NivelConflicto.Critico).ToList();
-            if (conflictosCriticos.Any())
+            var mostrarAlerta = conflictosCriticos.Any();
+            var mensajeAlerta = mostrarAlerta 
+                ? $"¡ATENCIÓN! {conflictosCriticos.Count} conflicto(s) crítico(s) detectado(s)"
+                : string.Empty;
+
+            // Actualizar TODAS las propiedades en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                MostrarAlerta = true;
-                MensajeAlerta = $"¡ATENCIÓN! {conflictosCriticos.Count} conflicto(s) crítico(s) detectado(s)";
-            }
-            else
-            {
-                MostrarAlerta = false;
-                MensajeAlerta = string.Empty;
-            }
+                Conflictos = new ObservableCollection<Conflicto>(conflictos);
+                DiasHabiles = diasHabiles;
+                MostrarAlerta = mostrarAlerta;
+                MensajeAlerta = mensajeAlerta;
+            });
 
             Log.Debug("Validación en tiempo real completada. Conflictos: {Count}, Días hábiles: {DiasHabiles}",
-                conflictos.Count, DiasHabiles);
+                conflictos.Count, diasHabiles);
         }
         catch (Exception ex)
         {
@@ -219,7 +221,8 @@ public class VacacionesViewModel : ViewModelBase
         }
         finally
         {
-            EstaValidando = false;
+            // Actualizar estado en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() => EstaValidando = false);
         }
     }
 
@@ -276,14 +279,18 @@ public class VacacionesViewModel : ViewModelBase
 
     private void Cancelar()
     {
-        EmpleadoSeleccionado = null;
-        FechaInicio = null;
-        FechaFin = null;
-        Observaciones = string.Empty;
-        DiasHabiles = 0;
-        Conflictos.Clear();
-        MostrarAlerta = false;
-        MensajeAlerta = string.Empty;
+        // Asegurar que la limpieza del formulario ocurra en UI thread
+        Dispatcher.UIThread.Post(() =>
+        {
+            EmpleadoSeleccionado = null;
+            FechaInicio = null;
+            FechaFin = null;
+            Observaciones = string.Empty;
+            DiasHabiles = 0;
+            Conflictos.Clear();
+            MostrarAlerta = false;
+            MensajeAlerta = string.Empty;
+        });
 
         Log.Debug("Formulario de vacación cancelado/limpiado");
     }
@@ -298,9 +305,11 @@ public class VacacionesViewModel : ViewModelBase
         {
             Log.Information("Cargando datos de vacaciones y empleados");
 
+            // Cargar datos en background
             var vacaciones = await _vacacionService.ObtenerTodasAsync();
             var empleados = await _empleadoService.ObtenerActivosAsync();
 
+            // Procesar datos
             var vacacionesDisplay = new List<VacacionDisplay>();
             foreach (var vacacion in vacaciones)
             {
@@ -312,8 +321,12 @@ public class VacacionesViewModel : ViewModelBase
                 });
             }
 
-            Vacaciones = new ObservableCollection<VacacionDisplay>(vacacionesDisplay);
-            Empleados = new ObservableCollection<Empleado>(empleados);
+            // Actualizar propiedades en UI thread
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                Vacaciones = new ObservableCollection<VacacionDisplay>(vacacionesDisplay);
+                Empleados = new ObservableCollection<Empleado>(empleados);
+            });
 
             Log.Information("Datos cargados: {VacacionesCount} vacaciones, {EmpleadosCount} empleados",
                 vacaciones.Count, empleados.Count);
