@@ -2,7 +2,32 @@
 
 Sistema web de gestión de recursos humanos para Ecuador y Paraguay con detección automática de conflictos y generación de reportes Excel.
 
-## 🚀 Inicio Rápido
+## ⚠️ IMPORTANTE: Si tienes problemas (404, navegación no funciona)
+
+**DEBES limpiar y reconstruir la solución:**
+
+### Visual Studio:
+```
+1. Menú → Compilar → Limpiar solución
+2. Menú → Compilar → Recompilar solución  
+3. Clic derecho en ExcelResourceManager.Web → "Establecer como proyecto de inicio"
+4. Presionar F5
+```
+
+### Línea de Comandos:
+```bash
+dotnet clean
+dotnet restore
+dotnet build
+cd ExcelResourceManager.Web
+dotnet run
+```
+
+**URL:** https://localhost:7061 (o el puerto que muestre en la consola)
+
+📖 **Guía detallada de solución de problemas:** [SOLUCION_PROBLEMAS.md](SOLUCION_PROBLEMAS.md)
+
+## 🚀 Inicio Rápido (Primera Vez)
 
 ### Opción 1: Visual Studio
 1. Abrir `ExcelResourceManager.slnx`
@@ -15,7 +40,7 @@ cd ExcelResourceManager.Web
 dotnet run
 ```
 
-Abrir navegador en: **https://localhost:5001**
+Abrir navegador en: **https://localhost:7061**
 
 ## 📋 Funcionalidades
 
