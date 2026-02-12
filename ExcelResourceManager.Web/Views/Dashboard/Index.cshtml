@@ -1,0 +1,96 @@
+@using ExcelResourceManager.Web.Controllers
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard - Gestión de Recursos Humanos";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-4">Dashboard de Recursos Humanos</h1>
+            <p class="text-muted">Resumen general del sistema</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Empleados</h5>
+                    <h2 class="mb-0">@Model.EmpleadosActivos</h2>
+                    <small class="text-muted">de @Model.TotalEmpleados total</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Clientes</h5>
+                    <h2 class="mb-0">@Model.ClientesActivos</h2>
+                    <small class="text-muted">de @Model.TotalClientes total</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card @(Model.ConflictosCriticos > 0 ? "border-danger" : "border-warning")">
+                <div class="card-body">
+                    <h5 class="card-title @(Model.ConflictosCriticos > 0 ? "text-danger" : "text-warning")">Conflictos</h5>
+                    <h2 class="mb-0">@Model.TotalConflictos</h2>
+                    <small class="text-muted">@Model.ConflictosCriticos críticos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximas Vacaciones -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Próximas Vacaciones (30 días)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.ProximasVacaciones.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Empleado</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Días Hábiles</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var vacacion in Model.ProximasVacaciones)
+                                    {
+                                        <tr>
+                                            <td><strong>@vacacion.EmpleadoNombre</strong></td>
+                                            <td>@vacacion.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                            <td>@vacacion.FechaFin.ToString("dd/MM/yyyy")</td>
+                                            <td><span class="badge bg-info">@vacacion.DiasHabiles días</span></td>
+                                            <td>
+                                                <span class="badge bg-success">@vacacion.Estado</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No hay vacaciones programadas para los próximos 30 días.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
