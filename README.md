@@ -4,7 +4,28 @@
 
 **Cambio Importante**: Reemplazamos Avalonia UI por ASP.NET Core MVC para eliminar problemas de threading y proporcionar una solución más estable.
 
-### ✅ Por qué ASP.NET Core MVC?
+---
+
+## 🚀 INICIO RÁPIDO
+
+### Visual Studio (Recomendado)
+1. Abrir `ExcelResourceManager.slnx` en Visual Studio 2022
+2. Establecer `ExcelResourceManager.Web` como proyecto de inicio (click derecho → "Establecer como proyecto de inicio")
+3. Presionar **F5** para ejecutar
+4. El navegador se abrirá automáticamente en https://localhost:5001
+
+### Línea de Comandos
+```bash
+cd ExcelResourceManager.Web
+dotnet run
+```
+Luego abrir navegador en: `https://localhost:5001`
+
+📖 **Para instrucciones detalladas en español, ver [INICIO.md](INICIO.md)**
+
+---
+
+## ✅ Por qué ASP.NET Core MVC?
 
 - **Sin problemas de threading** - Manejo correcto de async/await
 - **Acceso vía navegador** - No requiere instalación
@@ -13,21 +34,30 @@
 - **Tecnología madura** - Millones de aplicaciones en producción
 - **Código simple** - Fácil de mantener
 
-## 🚀 Inicio Rápido
-
-```bash
-cd ExcelResourceManager.Web
-dotnet run
-```
-
-Abrir navegador en: `https://localhost:5001`
-
 ## 🏗️ Arquitectura
 
 ```
 ExcelResourceManager/
-├── ExcelResourceManager.Web/          ← NUEVA aplicación web
+├── ExcelResourceManager.Web/          ← ✅ PROYECTO PRINCIPAL (USAR)
 │   ├── Controllers/                   - Controladores MVC
+│   ├── Views/                         - Vistas Razor + Bootstrap
+│   └── Program.cs                     - Configuración DI
+│
+├── ExcelResourceManager.Core/         - Lógica de negocio (SIN CAMBIOS)
+├── ExcelResourceManager.Data/         - Repositorios LiteDB (SIN CAMBIOS)
+├── ExcelResourceManager.Reports/      - Excel ClosedXML (SIN CAMBIOS)
+├── ExcelResourceManager.Tests/        - Tests (SIN CAMBIOS)
+└── ExcelResourceManager.Desktop/      ← ⚠️ DEPRECATED (No usar)
+```
+
+### ⚠️ Nota sobre ExcelResourceManager.Desktop
+El proyecto Desktop (Avalonia UI) está **DEPRECADO** debido a problemas de threading que no pudieron resolverse. 
+- Se mantiene solo como referencia
+- **NO ejecutar ni usar este proyecto**
+- Ver `ExcelResourceManager.Desktop/DEPRECATED.md` para detalles
+
+**100% del código de negocio reutilizado** - Solo cambiamos la capa de presentación.
+
 │   ├── Views/                         - Vistas Razor + Bootstrap
 │   └── Program.cs                     - Configuración DI
 │

@@ -1,7 +1,8 @@
 <Solution>
+  <Project Path="ExcelResourceManager.Web/ExcelResourceManager.Web.csproj" />
   <Project Path="ExcelResourceManager.Core/ExcelResourceManager.Core.csproj" />
   <Project Path="ExcelResourceManager.Data/ExcelResourceManager.Data.csproj" />
-  <Project Path="ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj" />
   <Project Path="ExcelResourceManager.Reports/ExcelResourceManager.Reports.csproj" />
   <Project Path="ExcelResourceManager.Tests/ExcelResourceManager.Tests.csproj" />
+  <Project Path="ExcelResourceManager.Desktop/ExcelResourceManager.Desktop.csproj" />
 </Solution>
