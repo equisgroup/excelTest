@@ -40,9 +40,16 @@
                             <a class="nav-link text-white" asp-area="" asp-controller="Reportes" asp-action="Index">Reportes</a>
                         </li>
                     </ul>
-                    <span class="navbar-text text-white">
-                        Modo: <strong>Prueba</strong>
-                    </span>
+                    <div class="d-flex align-items-center">
+                        <span class="navbar-text text-white me-3">
+                            Modo: <strong id="current-mode">@(Context.Session.GetString("Mode") ?? "Prueba")</strong>
+                        </span>
+                        <form asp-controller="Home" asp-action="ToggleMode" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-light">
+                                Cambiar a @(Context.Session.GetString("Mode") == "Producción" ? "Prueba" : "Producción")
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </nav>

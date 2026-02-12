@@ -1,62 +1,120 @@
 # Excel Resource Manager - Sistema de Gestión de RRHH
 
-## 🎯 NUEVA ARQUITECTURA: ASP.NET Core MVC (STABLE)
+Sistema web de gestión de recursos humanos para Ecuador y Paraguay con detección automática de conflictos y generación de reportes Excel.
 
-**Cambio Importante**: Reemplazamos Avalonia UI por ASP.NET Core MVC para eliminar problemas de threading y proporcionar una solución más estable.
+## 🚀 Inicio Rápido
 
----
+### Opción 1: Visual Studio
+1. Abrir `ExcelResourceManager.slnx`
+2. Establecer `ExcelResourceManager.Web` como proyecto de inicio
+3. Presionar **F5**
 
-## 🚀 INICIO RÁPIDO
-
-### Visual Studio (Recomendado)
-1. Abrir `ExcelResourceManager.slnx` en Visual Studio 2022
-2. Establecer `ExcelResourceManager.Web` como proyecto de inicio (click derecho → "Establecer como proyecto de inicio")
-3. Presionar **F5** para ejecutar
-4. El navegador se abrirá automáticamente en https://localhost:5001
-
-### Línea de Comandos
+### Opción 2: Línea de Comandos
 ```bash
 cd ExcelResourceManager.Web
 dotnet run
 ```
-Luego abrir navegador en: `https://localhost:5001`
 
-📖 **Para instrucciones detalladas en español, ver [INICIO.md](INICIO.md)**
+Abrir navegador en: **https://localhost:5001**
 
----
+## 📋 Funcionalidades
 
-## ✅ Por qué ASP.NET Core MVC?
-
-- **Sin problemas de threading** - Manejo correcto de async/await
-- **Acceso vía navegador** - No requiere instalación
-- **Multiplataforma** - Windows, Linux, Mac
-- **Visual Studio** - Soporte completo de debugging
-- **Tecnología madura** - Millones de aplicaciones en producción
-- **Código simple** - Fácil de mantener
+- ✅ **Dashboard** - KPIs en tiempo real y próximas vacaciones
+- ✅ **Empleados** - Lista completa de empleados activos
+- ✅ **Clientes** - Gestión de clientes por ubicación
+- ✅ **Vacaciones** - Solicitud y gestión con validación de conflictos
+- ✅ **Conflictos** - Visualización y resolución de conflictos detectados
+- ✅ **Reportes** - Generación de reportes Excel con ClosedXML
+- ✅ **Modo Test/Producción** - Toggle entre bases de datos
 
 ## 🏗️ Arquitectura
 
 ```
 ExcelResourceManager/
-├── ExcelResourceManager.Web/          ← ✅ PROYECTO PRINCIPAL (USAR)
-│   ├── Controllers/                   - Controladores MVC
-│   ├── Views/                         - Vistas Razor + Bootstrap
-│   └── Program.cs                     - Configuración DI
-│
-├── ExcelResourceManager.Core/         - Lógica de negocio (SIN CAMBIOS)
-├── ExcelResourceManager.Data/         - Repositorios LiteDB (SIN CAMBIOS)
-├── ExcelResourceManager.Reports/      - Excel ClosedXML (SIN CAMBIOS)
-├── ExcelResourceManager.Tests/        - Tests (SIN CAMBIOS)
-└── ExcelResourceManager.Desktop/      ← ⚠️ DEPRECATED (No usar)
+├── ExcelResourceManager.Web/          - Aplicación ASP.NET Core MVC
+│   ├── Controllers/                   - 6 controladores implementados
+│   ├── Views/                         - Vistas Razor con Bootstrap 5
+│   └── Program.cs                     - Configuración DI y servicios
+├── ExcelResourceManager.Core/         - Lógica de negocio
+├── ExcelResourceManager.Data/         - Repositorios LiteDB
+├── ExcelResourceManager.Reports/      - Generación de Excel
+└── ExcelResourceManager.Tests/        - Tests unitarios
 ```
 
-### ⚠️ Nota sobre ExcelResourceManager.Desktop
-El proyecto Desktop (Avalonia UI) está **DEPRECADO** debido a problemas de threading que no pudieron resolverse. 
-- Se mantiene solo como referencia
-- **NO ejecutar ni usar este proyecto**
-- Ver `ExcelResourceManager.Desktop/DEPRECATED.md` para detalles
+## 💾 Base de Datos
 
-**100% del código de negocio reutilizado** - Solo cambiamos la capa de presentación.
+**Modo Prueba** (por defecto): `database-test.db`
+- 20 empleados distribuidos en Guayaquil/Quito
+- 3 clientes activos
+- 15 vacaciones con conflictos intencionados
+- 31 feriados 2026 (Ecuador y Paraguay)
+
+**Modo Producción**: `database-prod.db` (vacía)
+
+**Cambiar modo**: Usar el botón "Cambiar a Producción/Prueba" en la barra de navegación.
+
+## 🛠️ Stack Tecnológico
+
+- ASP.NET Core 8.0 MVC
+- LiteDB 5.0.19 (NoSQL embebida)
+- Bootstrap 5 (UI responsive)
+- ClosedXML 0.102.3 (Reportes Excel)
+- Serilog 3.1.1 (Logging)
+
+## 🔧 Detección de Conflictos
+
+El sistema detecta automáticamente 6 tipos de conflictos:
+
+1. **Crítico**: Vacación + Viaje (mismas fechas)
+2. **Crítico**: Vacación + Turno Soporte
+3. **Medio**: Viaje + Turno Soporte
+4. **Alto**: Sobreasignación >100% a clientes
+5. **Bajo**: Viaje en feriado de destino
+6. **Bajo**: Vacación en feriado
+
+## 📊 Reportes
+
+**Reporte de Conflictos** (Excel):
+- Hoja 1: Resumen con KPIs y gráficos
+- Hoja 2: Listado detallado con formato condicional
+- Hoja 3: Agrupación por empleado con subtotales
+
+## 🧪 Testing
+
+```bash
+dotnet test
+```
+
+## 📚 Configuración
+
+Editar `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "TestDatabase": "Filename=database-test.db;Connection=shared",
+    "ProdDatabase": "Filename=database-prod.db;Connection=shared"
+  },
+  "App": {
+    "DefaultMode": "Test",
+    "ReportsOutputDirectory": "./Reportes"
+  }
+}
+```
+
+## 🔍 Navegación
+
+- **Dashboard**: Vista general del sistema
+- **Empleados**: 20 empleados con información completa
+- **Clientes**: 3 clientes por ubicación
+- **Vacaciones**: Formulario de solicitud y listado
+- **Conflictos**: Detección automática y gestión
+- **Reportes**: Generación de Excel profesionales
+
+---
+
+**Estado**: ✅ Aplicación funcional con todas las características implementadas
+
 
 │   ├── Views/                         - Vistas Razor + Bootstrap
 │   └── Program.cs                     - Configuración DI

@@ -19,8 +19,18 @@ var connectionString = isTestMode
     ? builder.Configuration.GetConnectionString("TestDatabase") ?? "Filename=database-test.db;Connection=shared"
     : builder.Configuration.GetConnectionString("ProdDatabase") ?? "Filename=database-prod.db;Connection=shared";
 
-// Register database and services
-builder.Services.AddScoped(sp => new LiteDbContext(connectionString));
+// Register database and services with factory pattern to support mode switching
+builder.Services.AddScoped(sp =>
+{
+    var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
+    var mode = httpContextAccessor?.HttpContext?.Session.GetString("Mode") ?? (isTestMode ? "Prueba" : "Producción");
+    var connStr = mode == "Prueba"
+        ? builder.Configuration.GetConnectionString("TestDatabase") ?? "Filename=database-test.db;Connection=shared"
+        : builder.Configuration.GetConnectionString("ProdDatabase") ?? "Filename=database-prod.db;Connection=shared";
+    return new LiteDbContext(connStr);
+});
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Register business services
@@ -32,6 +42,7 @@ builder.Services.AddScoped<IViajeService, ViajeService>();
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ITurnoSoporteService, TurnoSoporteService>();
+builder.Services.AddScoped<ExcelResourceManager.Reports.IReportService, ExcelResourceManager.Reports.Generators.ConflictosReportGenerator>();
 
 // Add MVC services
 builder.Services.AddControllersWithViews();
