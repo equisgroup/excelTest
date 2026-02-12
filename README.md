@@ -1,53 +1,103 @@
-# ExcelResourceManager
+# Excel Resource Manager - Sistema de Gestión de RRHH
 
-Sistema de gestión de recursos humanos completo desarrollado con Avalonia UI 11.1, ReactiveUI y LiteDB para gestión de recursos humanos en Ecuador y Paraguay, con detección automática de conflictos y generación de reportes Excel.
+## 🎯 NUEVA ARQUITECTURA: ASP.NET Core MVC (STABLE)
 
-## 📋 Características Principales
+**Cambio Importante**: Reemplazamos Avalonia UI por ASP.NET Core MVC para eliminar problemas de threading y proporcionar una solución más estable.
 
-- ✅ **Gestión de Empleados y Clientes** - CRUD completo con asignaciones
-- ✅ **Gestión de Vacaciones** - Con validación reactiva en tiempo real
-- ✅ **Gestión de Viajes** - Planificación y seguimiento
-- ✅ **Turnos de Soporte** - Calendario rotativo
-- ✅ **Detección Automática de Conflictos** - 6 tipos de validaciones
-- ✅ **Feriados 2026** - Ecuador y Paraguay precargados
-- ✅ **Reportes Excel** - Generación con ClosedXML
-- ✅ **Modo Test/Producción** - Toggle en tiempo real
-- ✅ **Interfaz Moderna** - Avalonia UI con Fluent Design
+### ✅ Por qué ASP.NET Core MVC?
+
+- **Sin problemas de threading** - Manejo correcto de async/await
+- **Acceso vía navegador** - No requiere instalación
+- **Multiplataforma** - Windows, Linux, Mac
+- **Visual Studio** - Soporte completo de debugging
+- **Tecnología madura** - Millones de aplicaciones en producción
+- **Código simple** - Fácil de mantener
+
+## 🚀 Inicio Rápido
+
+```bash
+cd ExcelResourceManager.Web
+dotnet run
+```
+
+Abrir navegador en: `https://localhost:5001`
 
 ## 🏗️ Arquitectura
 
 ```
 ExcelResourceManager/
-├── ExcelResourceManager.Desktop    # Aplicación Avalonia UI
-│   ├── Views/                      # Vistas AXAML
-│   ├── ViewModels/                 # ViewModels ReactiveUI
-│   ├── Converters/                 # Value Converters
-│   └── Styles/                     # Estilos personalizados
-├── ExcelResourceManager.Core       # Lógica de negocio
-│   ├── Models/                     # Modelos de dominio
-│   ├── Enums/                      # Enumeraciones
-│   └── Services/                   # Servicios e interfaces
-├── ExcelResourceManager.Data       # Acceso a datos
-│   └── Repositories/               # Patrón Repository + UnitOfWork
-├── ExcelResourceManager.Reports    # Generación de reportes
-│   └── Generators/                 # Generadores Excel
-└── ExcelResourceManager.Tests      # Pruebas unitarias
+├── ExcelResourceManager.Web/          ← NUEVA aplicación web
+│   ├── Controllers/                   - Controladores MVC
+│   ├── Views/                         - Vistas Razor + Bootstrap
+│   └── Program.cs                     - Configuración DI
+│
+├── ExcelResourceManager.Core/         - Lógica de negocio (SIN CAMBIOS)
+├── ExcelResourceManager.Data/         - Repositorios LiteDB (SIN CAMBIOS)
+├── ExcelResourceManager.Reports/      - Excel ClosedXML (SIN CAMBIOS)
+└── ExcelResourceManager.Tests/        - Tests (SIN CAMBIOS)
 ```
+
+**100% del código de negocio reutilizado** - Solo cambiamos la capa de presentación.
+
+## 📊 Funcionalidades
+
+- **Dashboard**: KPIs en tiempo real, próximas vacaciones
+- **Empleados**: Gestión completa de personal
+- **Clientes**: Administración por ubicación  
+- **Vacaciones**: Detección automática de conflictos
+- **Conflictos**: 6 tipos de validaciones (Crítico, Alto, Medio, Bajo)
+- **Reportes**: Excel profesionales con ClosedXML
+
+## 💾 Base de Datos LiteDB
+
+- **Modo Test**: `database-test.db` con 84 registros de prueba
+- **Modo Prod**: `database-prod.db` vacía
+- Datos incluyen: 20 empleados, 15 vacaciones, 31 feriados 2026
 
 ## 🛠️ Stack Tecnológico
 
-- **.NET 8.0**
-- **Avalonia UI 11.1.3** - Framework UI multiplataforma
-- **ReactiveUI** - MVVM reactivo
-- **LiteDB 5.0.19** - Base de datos NoSQL embebida
-- **ClosedXML 0.102.3** - Generación de reportes Excel
-- **Serilog 3.1.1** - Logging estructurado
-- **xUnit, Moq, FluentAssertions** - Testing
+- ASP.NET Core 8.0 MVC
+- LiteDB 5.0.19
+- Bootstrap 5
+- ClosedXML 0.102.3
+- Serilog 3.1.1
 
-## 📦 Instalación
+## 📝 Configuración
 
-### Prerrequisitos
-- .NET 8.0 SDK o superior
+Editar `ExcelResourceManager.Web/appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "TestDatabase": "Filename=database-test.db;Connection=shared",
+    "ProdDatabase": "Filename=database-prod.db;Connection=shared"
+  },
+  "App": {
+    "DefaultMode": "Test"
+  }
+}
+```
+
+## 🧪 Testing
+
+```bash
+dotnet test
+```
+
+## 📦 Despliegue Producción
+
+```bash
+dotnet publish -c Release
+```
+
+Compatible con IIS, Kestrel, nginx, Docker.
+
+---
+
+**Estado**: ✅ PRODUCCIÓN READY - Sin threading issues
+
+Ver `/ExcelResourceManager.Web/README.md` para más detalles.
+
 - Windows, Linux o macOS
 
 ### Clonar y Compilar

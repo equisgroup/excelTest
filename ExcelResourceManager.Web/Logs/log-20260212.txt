@@ -1,0 +1,6 @@
+2026-02-12 15:53:16.992 +00:00 [INF] Seeding test data...
+2026-02-12 15:53:17.181 +00:00 [INF] Iniciando carga de datos de prueba...
+2026-02-12 15:53:17.556 +00:00 [INF] Datos de prueba cargados exitosamente.
+2026-02-12 15:53:17.556 +00:00 [INF] Test data seeded successfully
+2026-02-12 15:53:17.715 +00:00 [INF] Application started successfully
+2026-02-12 15:53:17.941 +00:00 [WRN] No XML encryptor configured. Key {d1dca995-cdfe-4c4a-819f-c106762335bc} may be persisted to storage in unencrypted form.
