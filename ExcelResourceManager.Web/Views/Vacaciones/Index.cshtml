@@ -78,6 +78,7 @@
                             <th>Días</th>
                             <th>Estado</th>
                             <th>Conflictos</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,6 +116,13 @@
                                     {
                                         <span class="badge bg-success">No</span>
                                     }
+                                </td>
+                                <td>
+                                    <form asp-action="Delete" asp-route-id="@vacacion.Id" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro que desea eliminar esta vacación?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         }
