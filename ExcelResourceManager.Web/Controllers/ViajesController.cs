@@ -100,8 +100,30 @@ public class ViajesController : Controller
         {
             if (ModelState.IsValid)
             {
-                await _viajeService.CrearAsync(viaje);
-                TempData["Success"] = "Viaje creado exitosamente";
+                // Validar conflictos
+                var conflictos = await _validationService.ValidarViajeAsync(viaje);
+                viaje.TieneConflictos = conflictos.Any();
+                
+                // Crear el viaje
+                var viajeId = await _viajeService.CrearAsync(viaje);
+                
+                // Guardar los conflictos detectados
+                foreach (var conflicto in conflictos)
+                {
+                    conflicto.ViajeId = viajeId;
+                    await _unitOfWork.Conflictos.InsertAsync(conflicto);
+                }
+                await _unitOfWork.CommitAsync();
+                
+                if (conflictos.Any())
+                {
+                    TempData["Warning"] = $"Viaje creado con {conflictos.Count} conflicto(s) detectado(s)";
+                }
+                else
+                {
+                    TempData["Success"] = "Viaje creado exitosamente";
+                }
+                
                 return RedirectToAction(nameof(Index));
             }
             

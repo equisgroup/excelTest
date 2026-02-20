@@ -1,5 +1,6 @@
 using ExcelResourceManager.Core.Services;
 using ExcelResourceManager.Core.Models;
+using ExcelResourceManager.Core.Repositories;
 using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,17 +11,20 @@ public class VacacionesController : Controller
     private readonly IVacacionService _vacacionService;
     private readonly IEmpleadoService _empleadoService;
     private readonly IValidationService _validationService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<VacacionesController> _logger;
 
     public VacacionesController(
         IVacacionService vacacionService,
         IEmpleadoService empleadoService,
         IValidationService validationService,
+        IUnitOfWork unitOfWork,
         ILogger<VacacionesController> logger)
     {
         _vacacionService = vacacionService;
         _empleadoService = empleadoService;
         _validationService = validationService;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -72,15 +76,28 @@ public class VacacionesController : Controller
                 
                 // Validar conflictos
                 var conflictos = await _validationService.ValidarVacacionAsync(vacacion);
+                vacacion.TieneConflictos = conflictos.Any();
+                
+                // Crear la vacación
+                var vacacionId = await _vacacionService.CrearAsync(vacacion);
+                
+                // Guardar los conflictos detectados
+                foreach (var conflicto in conflictos)
+                {
+                    conflicto.VacacionId = vacacionId;
+                    await _unitOfWork.Conflictos.InsertAsync(conflicto);
+                }
+                await _unitOfWork.CommitAsync();
                 
                 if (conflictos.Any(c => c.Nivel == ExcelResourceManager.Core.Enums.NivelConflicto.Critico))
                 {
-                    TempData["Error"] = "No se puede crear la vacación: existen conflictos críticos";
-                    return RedirectToAction(nameof(Index));
+                    TempData["Warning"] = $"Vacación creada con {conflictos.Count} conflicto(s) detectado(s)";
+                }
+                else
+                {
+                    TempData["Success"] = "Vacación creada exitosamente";
                 }
                 
-                await _vacacionService.CrearAsync(vacacion);
-                TempData["Success"] = "Vacación creada exitosamente";
                 return RedirectToAction(nameof(Index));
             }
         }

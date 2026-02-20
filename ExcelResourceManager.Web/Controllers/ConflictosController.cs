@@ -9,12 +9,18 @@ public class ConflictosController : Controller
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmpleadoService _empleadoService;
+    private readonly IValidationService _validationService;
     private readonly ILogger<ConflictosController> _logger;
 
-    public ConflictosController(IUnitOfWork unitOfWork, IEmpleadoService empleadoService, ILogger<ConflictosController> logger)
+    public ConflictosController(
+        IUnitOfWork unitOfWork, 
+        IEmpleadoService empleadoService,
+        IValidationService validationService,
+        ILogger<ConflictosController> logger)
     {
         _unitOfWork = unitOfWork;
         _empleadoService = empleadoService;
+        _validationService = validationService;
         _logger = logger;
     }
 
@@ -71,6 +77,43 @@ public class ConflictosController : Controller
         {
             _logger.LogError(ex, $"Error al resolver conflicto {id}");
             TempData["Error"] = "Error al resolver el conflicto";
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RecalcularConflictos(int año)
+    {
+        try
+        {
+            // Eliminar conflictos existentes del año seleccionado
+            var conflictosExistentes = await _unitOfWork.Conflictos.FindAsync(c => 
+                c.FechaConflicto.Year == año);
+            
+            foreach (var conflicto in conflictosExistentes)
+            {
+                await _unitOfWork.Conflictos.DeleteAsync(conflicto.Id);
+            }
+            await _unitOfWork.CommitAsync();
+            
+            // Recalcular todos los conflictos
+            var nuevosConflictos = await _validationService.ValidarTodosAsync();
+            
+            // Filtrar solo los del año seleccionado y guardar
+            var conflictosDelAño = nuevosConflictos.Where(c => c.FechaConflicto.Year == año).ToList();
+            
+            foreach (var conflicto in conflictosDelAño)
+            {
+                await _unitOfWork.Conflictos.InsertAsync(conflicto);
+            }
+            await _unitOfWork.CommitAsync();
+            
+            TempData["Success"] = $"Se recalcularon {conflictosDelAño.Count} conflicto(s) para el año {año}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al recalcular conflictos del año {año}");
+            TempData["Error"] = "Error al recalcular conflictos";
         }
         return RedirectToAction(nameof(Index));
     }
