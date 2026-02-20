@@ -1,0 +1,113 @@
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="row">
+    <div class="col-12">
+        <h2>Generación de Reportes</h2>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-excel"></i> Reporte de Conflictos</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Genera un reporte Excel completo con todos los conflictos detectados en el sistema.</p>
+                        <p><strong>Incluye:</strong></p>
+                        <ul>
+                            <li>Resumen de conflictos por tipo y nivel</li>
+                            <li>Listado detallado con formato condicional</li>
+                            <li>Agrupación por empleado</li>
+                            <li>Gráficos y estadísticas</li>
+                        </ul>
+                        <form asp-action="GenerarConflictos" method="post">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-download"></i> Generar Reporte de Conflictos
+                            </button>
+                        </form>
+                        <small class="text-muted mt-2 d-block">
+                            El reporte se descarga automáticamente en formato Excel (.xlsx)
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Dashboard Gerencial</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Reporte ejecutivo con KPIs y métricas clave del sistema de recursos humanos.</p>
+                        <p><strong>Incluye:</strong></p>
+                        <ul>
+                            <li>Indicadores de personal activo</li>
+                            <li>Estadísticas de vacaciones</li>
+                            <li>Análisis de asignaciones</li>
+                            <li>Tendencias y proyecciones</li>
+                        </ul>
+                        <button type="button" class="btn btn-primary w-100" disabled>
+                            <i class="bi bi-download"></i> Generar Dashboard (Próximamente)
+                        </button>
+                        <small class="text-muted mt-2 d-block">
+                            Funcionalidad en desarrollo
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Información sobre los Reportes</h5>
+            </div>
+            <div class="card-body">
+                <h6>Formato de Reportes</h6>
+                <p>Todos los reportes se generan en formato Microsoft Excel (.xlsx) con:</p>
+                <ul>
+                    <li><strong>Formato condicional:</strong> Colores por nivel de conflicto (Rojo=Crítico, Naranja=Alto, Amarillo=Medio, Azul=Bajo)</li>
+                    <li><strong>Filtros automáticos:</strong> Para facilitar la búsqueda y análisis</li>
+                    <li><strong>Múltiples hojas:</strong> Organización por tipo de información</li>
+                    <li><strong>Gráficos:</strong> Visualización de estadísticas clave</li>
+                </ul>
+
+                <h6 class="mt-3">Ubicación de Reportes</h6>
+                <p>Los reportes se guardan automáticamente en la carpeta <code class="text-danger">Reportes/</code> del directorio de la aplicación.</p>
+
+                <h6 class="mt-3">Tipos de Conflictos Detectados</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><span class="badge bg-danger">Crítico</span> Vacación + Viaje solapados</li>
+                            <li><span class="badge bg-danger">Crítico</span> Vacación + Turno de soporte</li>
+                            <li><span class="badge bg-warning text-dark">Medio</span> Viaje + Turno de soporte</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><span class="badge bg-secondary">Bajo</span> Viaje en feriado</li>
+                            <li><span class="badge bg-secondary">Bajo</span> Vacación en feriado</li>
+                            <li><span class="badge bg-warning text-dark">Alto</span> Sobreasignación de clientes (>100%)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
