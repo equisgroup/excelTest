@@ -45,9 +45,12 @@ Abrir navegador en: **https://localhost:7061**
 ## 📋 Funcionalidades
 
 - ✅ **Dashboard** - KPIs en tiempo real y próximas vacaciones
-- ✅ **Empleados** - Lista completa de empleados activos
-- ✅ **Clientes** - Gestión de clientes por ubicación
-- ✅ **Vacaciones** - Solicitud y gestión con validación de conflictos
+- ✅ **Empleados** - CRUD completo (Crear, Listar, Editar, Eliminar)
+- ✅ **Clientes** - CRUD completo (Crear, Listar, Editar, Eliminar)
+- ✅ **Vacaciones** - Solicitud con validación de conflictos y eliminación
+- ✅ **Conflictos** - Lista de conflictos con función de resolver
+- ✅ **Reportes** - Generación de reportes Excel con formato condicional
+- ✅ **Cambio de Modo** - Toggle entre Prueba (20 empleados) y Producción (vacío)
 - ✅ **Conflictos** - Visualización y resolución de conflictos detectados
 - ✅ **Reportes** - Generación de reportes Excel con ClosedXML
 - ✅ **Modo Test/Producción** - Toggle entre bases de datos
