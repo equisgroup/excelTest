@@ -1,4 +1,6 @@
 using ExcelResourceManager.Core.Repositories;
+using ExcelResourceManager.Core.Services;
+using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExcelResourceManager.Web.Controllers;
@@ -6,11 +8,13 @@ namespace ExcelResourceManager.Web.Controllers;
 public class ConflictosController : Controller
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEmpleadoService _empleadoService;
     private readonly ILogger<ConflictosController> _logger;
 
-    public ConflictosController(IUnitOfWork unitOfWork, ILogger<ConflictosController> logger)
+    public ConflictosController(IUnitOfWork unitOfWork, IEmpleadoService empleadoService, ILogger<ConflictosController> logger)
     {
         _unitOfWork = unitOfWork;
+        _empleadoService = empleadoService;
         _logger = logger;
     }
 
@@ -19,12 +23,33 @@ public class ConflictosController : Controller
         try
         {
             var conflictos = await _unitOfWork.Conflictos.GetAllAsync();
-            return View(conflictos.OrderByDescending(c => c.FechaConflicto).ToList());
+            var empleados = await _empleadoService.ObtenerTodosAsync();
+            
+            // Crear ViewModels con información del empleado
+            var conflictosViewModel = conflictos.Select(c =>
+            {
+                var empleado = empleados.FirstOrDefault(e => e.Id == c.EmpleadoId);
+                return new ConflictoViewModel
+                {
+                    Id = c.Id,
+                    Tipo = c.Tipo,
+                    Nivel = c.Nivel,
+                    EmpleadoId = c.EmpleadoId,
+                    EmpleadoNombre = empleado?.NombreCompleto ?? "Desconocido",
+                    EmpleadoEmail = empleado?.Email ?? "",
+                    FechaConflicto = c.FechaConflicto,
+                    Descripcion = c.Descripcion,
+                    Recomendacion = c.Recomendacion,
+                    Resuelto = c.Resuelto
+                };
+            }).OrderByDescending(c => c.FechaConflicto).ToList();
+            
+            return View(conflictosViewModel);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al cargar conflictos");
-            return View(new List<ExcelResourceManager.Core.Models.Conflicto>());
+            return View(new List<ConflictoViewModel>());
         }
     }
 

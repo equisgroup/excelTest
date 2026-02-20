@@ -1,5 +1,6 @@
 using ExcelResourceManager.Core.Services;
 using ExcelResourceManager.Core.Models;
+using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExcelResourceManager.Web.Controllers;
@@ -28,13 +29,34 @@ public class VacacionesController : Controller
         try
         {
             var vacaciones = await _vacacionService.ObtenerTodasAsync();
+            var empleados = await _empleadoService.ObtenerTodosAsync();
+            
+            // Crear ViewModels con información del empleado
+            var vacacionesViewModel = vacaciones.Select(v =>
+            {
+                var empleado = empleados.FirstOrDefault(e => e.Id == v.EmpleadoId);
+                return new VacacionViewModel
+                {
+                    Id = v.Id,
+                    EmpleadoId = v.EmpleadoId,
+                    EmpleadoNombre = empleado?.NombreCompleto ?? "Desconocido",
+                    EmpleadoEmail = empleado?.Email ?? "",
+                    FechaInicio = v.FechaInicio,
+                    FechaFin = v.FechaFin,
+                    Estado = v.Estado,
+                    DiasHabiles = v.DiasHabiles,
+                    TieneConflictos = v.TieneConflictos,
+                    Observaciones = v.Observaciones
+                };
+            }).ToList();
+            
             ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            return View(vacaciones);
+            return View(vacacionesViewModel);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al cargar vacaciones");
-            return View(new List<Vacacion>());
+            return View(new List<VacacionViewModel>());
         }
     }
 
@@ -82,6 +104,56 @@ public class VacacionesController : Controller
         {
             _logger.LogError(ex, $"Error al eliminar vacación {id}");
             TempData["Error"] = "Error al eliminar la vacación";
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Aprobar(int id)
+    {
+        try
+        {
+            var vacacion = await _vacacionService.ObtenerPorIdAsync(id);
+            if (vacacion != null)
+            {
+                vacacion.Estado = ExcelResourceManager.Core.Enums.EstadoVacacion.Aprobada;
+                await _vacacionService.ActualizarAsync(vacacion);
+                TempData["Success"] = "Vacación aprobada exitosamente";
+            }
+            else
+            {
+                TempData["Error"] = "Vacación no encontrada";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al aprobar vacación {id}");
+            TempData["Error"] = "Error al aprobar la vacación";
+        }
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Rechazar(int id)
+    {
+        try
+        {
+            var vacacion = await _vacacionService.ObtenerPorIdAsync(id);
+            if (vacacion != null)
+            {
+                vacacion.Estado = ExcelResourceManager.Core.Enums.EstadoVacacion.Rechazada;
+                await _vacacionService.ActualizarAsync(vacacion);
+                TempData["Success"] = "Vacación rechazada exitosamente";
+            }
+            else
+            {
+                TempData["Error"] = "Vacación no encontrada";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error al rechazar vacación {id}");
+            TempData["Error"] = "Error al rechazar la vacación";
         }
         return RedirectToAction(nameof(Index));
     }

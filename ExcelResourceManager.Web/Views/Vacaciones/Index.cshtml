@@ -1,4 +1,4 @@
-@model IEnumerable<ExcelResourceManager.Core.Models.Vacacion>
+@model IEnumerable<ExcelResourceManager.Web.Models.VacacionViewModel>
 
 @{
     ViewData["Title"] = "Vacaciones";
@@ -73,6 +73,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Empleado</th>
+                            <th>Email</th>
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
                             <th>Días</th>
@@ -86,7 +87,8 @@
                         {
                             <tr>
                                 <td>@vacacion.Id</td>
-                                <td>@vacacion.EmpleadoId</td>
+                                <td>@vacacion.EmpleadoNombre</td>
+                                <td>@vacacion.EmpleadoEmail</td>
                                 <td>@vacacion.FechaInicio.ToString("dd/MM/yyyy")</td>
                                 <td>@vacacion.FechaFin.ToString("dd/MM/yyyy")</td>
                                 <td>@vacacion.DiasHabiles</td>
@@ -118,6 +120,19 @@
                                     }
                                 </td>
                                 <td>
+                                    @if (vacacion.Estado == ExcelResourceManager.Core.Enums.EstadoVacacion.Solicitada)
+                                    {
+                                        <form asp-action="Aprobar" asp-route-id="@vacacion.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        </form>
+                                        <form asp-action="Rechazar" asp-route-id="@vacacion.Id" method="post" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-warning" title="Rechazar">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
+                                    }
                                     <form asp-action="Delete" asp-route-id="@vacacion.Id" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro que desea eliminar esta vacación?');">
                                         <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
                                             <i class="bi bi-trash"></i>
