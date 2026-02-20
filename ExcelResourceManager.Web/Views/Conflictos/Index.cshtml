@@ -1,0 +1,174 @@
+@model IEnumerable<ExcelResourceManager.Web.Models.ConflictoViewModel>
+
+@{
+    ViewData["Title"] = "Conflictos";
+}
+
+<div class="row">
+    <div class="col-12">
+        <h2>Gestión de Conflictos</h2>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                @TempData["Warning"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Formulario para recalcular conflictos -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form asp-action="RecalcularConflictos" method="post" class="row g-3 align-items-end">
+                    <div class="col-auto">
+                        <label for="año" class="form-label">Año para recalcular:</label>
+                        <select name="año" id="año" class="form-select">
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-arrow-clockwise"></i> Recalcular Conflictos
+                        </button>
+                    </div>
+                    <div class="col">
+                        <small class="text-muted">
+                            Esto eliminará los conflictos existentes del año seleccionado y recalculará todos los conflictos basándose en vacaciones, viajes y turnos de soporte actuales.
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Nivel</th>
+                            <th>Empleado</th>
+                            <th>Email</th>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var conflicto in Model)
+                            {
+                                <tr>
+                                    <td>@conflicto.Id</td>
+                                    <td>
+                                        @switch (conflicto.Tipo)
+                                        {
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.VacacionVsViaje:
+                                                <span class="badge bg-danger">Vacación vs Viaje</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.VacacionVsSoporte:
+                                                <span class="badge bg-danger">Vacación vs Soporte</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.ViajeVsSoporte:
+                                                <span class="badge bg-warning text-dark">Viaje vs Soporte</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.ViajeEnFeriado:
+                                                <span class="badge bg-info">Viaje en Feriado</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.VacacionEnFeriado:
+                                                <span class="badge bg-info">Vacación en Feriado</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.TipoConflicto.Sobreasignacion:
+                                                <span class="badge bg-warning text-dark">Sobreasignación</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (conflicto.Nivel)
+                                        {
+                                            case ExcelResourceManager.Core.Enums.NivelConflicto.Critico:
+                                                <span class="badge bg-danger">Crítico</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.NivelConflicto.Alto:
+                                                <span class="badge bg-warning text-dark">Alto</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.NivelConflicto.Medio:
+                                                <span class="badge bg-info">Medio</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.NivelConflicto.Bajo:
+                                                <span class="badge bg-secondary">Bajo</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.NivelConflicto.Informativo:
+                                                <span class="badge bg-light text-dark">Informativo</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>@conflicto.EmpleadoNombre</td>
+                                    <td>@conflicto.EmpleadoEmail</td>
+                                    <td>@conflicto.FechaConflicto.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <small>@conflicto.Descripcion</small>
+                                        @if (!string.IsNullOrEmpty(conflicto.Recomendacion))
+                                        {
+                                            <br /><small class="text-muted"><i>@conflicto.Recomendacion</i></small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (conflicto.Resuelto)
+                                        {
+                                            <span class="badge bg-success">Resuelto</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Pendiente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!conflicto.Resuelto)
+                                        {
+                                            <form asp-action="Resolver" asp-route-id="@conflicto.Id" method="post" style="display:inline;">
+                                                <button type="submit" class="btn btn-sm btn-success" title="Marcar como resuelto">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-info-circle"></i> No hay conflictos registrados en el sistema
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

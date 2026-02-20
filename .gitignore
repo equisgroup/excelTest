@@ -1,0 +1,15 @@
+bin/
+obj/
+*.db
+logs/
+Logs/
+.vs/
+.idea/
+*.user
+*.suo
+/Reportes/
+ExcelResourceManager.Web/Reportes/
+.vscode/
+*.swp
+*~
+*.DotSettings.user
