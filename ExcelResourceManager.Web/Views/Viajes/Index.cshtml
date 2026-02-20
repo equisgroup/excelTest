@@ -1,0 +1,119 @@
+@model IEnumerable<ExcelResourceManager.Web.Models.ViajeViewModel>
+
+@{
+    ViewData["Title"] = "Viajes";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-airplane"></i> Gestión de Viajes</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Viaje
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay viajes registrados. Haga clic en "Nuevo Viaje" para crear uno.
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Email</th>
+                                <th>Cliente Destino</th>
+                                <th>Ubicación Destino</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Estado</th>
+                                <th>Conflictos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var viaje in Model)
+                            {
+                                <tr>
+                                    <td>@viaje.EmpleadoNombre</td>
+                                    <td><small class="text-muted">@viaje.EmpleadoEmail</small></td>
+                                    <td>@viaje.ClienteNombre</td>
+                                    <td>@viaje.UbicacionNombre</td>
+                                    <td>@viaje.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                    <td>@viaje.FechaFin.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @switch (viaje.Estado)
+                                        {
+                                            case ExcelResourceManager.Core.Enums.EstadoViaje.Planificado:
+                                                <span class="badge bg-primary">Planificado</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.EstadoViaje.Confirmado:
+                                                <span class="badge bg-success">Confirmado</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.EstadoViaje.EnCurso:
+                                                <span class="badge bg-warning text-dark">En Curso</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.EstadoViaje.Completado:
+                                                <span class="badge bg-info text-dark">Completado</span>
+                                                break;
+                                            case ExcelResourceManager.Core.Enums.EstadoViaje.Cancelado:
+                                                <span class="badge bg-secondary">Cancelado</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (viaje.TieneConflictos)
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle"></i> Sí
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> No
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="Edit" asp-route-id="@viaje.Id" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@viaje.Id" method="post" class="d-inline" 
+                                              onsubmit="return confirm('¿Está seguro que desea eliminar este viaje?');">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
