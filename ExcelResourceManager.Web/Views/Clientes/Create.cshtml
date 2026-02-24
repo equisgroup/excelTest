@@ -47,7 +47,26 @@
                         <div class="mb-3">
                             <label asp-for="Email" class="form-label">Email</label>
                             <input asp-for="Email" type="email" class="form-control" />
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" />
                             <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaContratoInicio" class="form-label">Fecha Inicio Contrato</label>
+                                <input asp-for="FechaContratoInicio" type="date" class="form-control" />
+                                <span asp-validation-for="FechaContratoInicio" class="text-danger"></span>
+                                <small class="form-text text-muted">Opcional: Fecha de inicio del contrato</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaContratoFin" class="form-label">Fecha Fin Contrato</label>
+                                <input asp-for="FechaContratoFin" type="date" class="form-control" />
+                                <span asp-validation-for="FechaContratoFin" class="text-danger"></span>
+                                <small class="form-text text-muted">Opcional: Fecha de término del contrato</small>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">

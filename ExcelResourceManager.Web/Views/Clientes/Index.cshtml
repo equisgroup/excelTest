@@ -38,6 +38,8 @@
                             <th>Código Interno</th>
                             <th>Email</th>
                             <th>Ubicación ID</th>
+                            <th>Contrato Inicio</th>
+                            <th>Contrato Fin</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -51,6 +53,26 @@
                                 <td>@cliente.CodigoInterno</td>
                                 <td>@cliente.Email</td>
                                 <td>@cliente.UbicacionId</td>
+                                <td>
+                                    @if (cliente.FechaContratoInicio.HasValue)
+                                    {
+                                        @cliente.FechaContratoInicio.Value.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (cliente.FechaContratoFin.HasValue)
+                                    {
+                                        @cliente.FechaContratoFin.Value.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
                                 <td>
                                     @if (cliente.Activo)
                                     {
