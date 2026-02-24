@@ -127,6 +127,8 @@ public class DataSeedService : IDataSeedService
                 UbicacionId = 1,
                 CodigoInterno = "CLI-GYE-001",
                 Email = "contacto@clienteguayaquil.com",
+                FechaContratoInicio = new DateTime(2024, 1, 1),
+                FechaContratoFin = new DateTime(2025, 12, 31),
                 Activo = true
             },
             new()
@@ -136,6 +138,8 @@ public class DataSeedService : IDataSeedService
                 UbicacionId = 2,
                 CodigoInterno = "CLI-UIO-001",
                 Email = "contacto@clientequito.com",
+                FechaContratoInicio = new DateTime(2024, 3, 1),
+                FechaContratoFin = new DateTime(2026, 2, 28),
                 Activo = true
             },
             new()
@@ -145,6 +149,8 @@ public class DataSeedService : IDataSeedService
                 UbicacionId = 3,
                 CodigoInterno = "CLI-ASU-001",
                 Email = "contacto@clienteasuncion.com",
+                FechaContratoInicio = new DateTime(2024, 6, 1),
+                FechaContratoFin = new DateTime(2026, 5, 31),
                 Activo = true
             }
         };
@@ -152,6 +158,28 @@ public class DataSeedService : IDataSeedService
         foreach (var cliente in clientes)
         {
             await _unitOfWork.Clientes.InsertAsync(cliente);
+        }
+        
+        // Seed Roles Cliente
+        await SeedRolesClienteAsync();
+    }
+    
+    private async Task SeedRolesClienteAsync()
+    {
+        var rolesCliente = new List<RolCliente>
+        {
+            new() { Id = 1, ClienteId = 1, Rol = "Desarrollador Backend", CantidadRequerida = 3, FechaInicio = new DateTime(2024, 1, 1), FechaFin = new DateTime(2025, 12, 31) },
+            new() { Id = 2, ClienteId = 1, Rol = "Desarrollador Frontend", CantidadRequerida = 2, FechaInicio = new DateTime(2024, 1, 1), FechaFin = new DateTime(2025, 12, 31) },
+            new() { Id = 3, ClienteId = 1, Rol = "QA", CantidadRequerida = 1, FechaInicio = new DateTime(2024, 1, 1), FechaFin = new DateTime(2025, 12, 31) },
+            new() { Id = 4, ClienteId = 2, Rol = "Arquitecto", CantidadRequerida = 1, FechaInicio = new DateTime(2024, 3, 1), FechaFin = new DateTime(2026, 2, 28) },
+            new() { Id = 5, ClienteId = 2, Rol = "Desarrollador", CantidadRequerida = 4, FechaInicio = new DateTime(2024, 3, 1), FechaFin = new DateTime(2026, 2, 28) },
+            new() { Id = 6, ClienteId = 3, Rol = "Desarrollador", CantidadRequerida = 2, FechaInicio = new DateTime(2024, 6, 1), FechaFin = new DateTime(2026, 5, 31) },
+            new() { Id = 7, ClienteId = 3, Rol = "DevOps", CantidadRequerida = 1, FechaInicio = new DateTime(2024, 6, 1), FechaFin = new DateTime(2026, 5, 31) }
+        };
+
+        foreach (var rolCliente in rolesCliente)
+        {
+            await _unitOfWork.RolesCliente.InsertAsync(rolCliente);
         }
     }
 
@@ -194,31 +222,31 @@ public class DataSeedService : IDataSeedService
     {
         var asignaciones = new List<AsignacionCliente>
         {
-            // Guayaquil
-            new() { Id = 1, EmpleadoId = 1, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 2, EmpleadoId = 2, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 75m, Activa = true },
-            new() { Id = 3, EmpleadoId = 3, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true },
-            new() { Id = 4, EmpleadoId = 4, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 5, EmpleadoId = 6, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 15), PorcentajeAsignacion = 80m, Activa = true },
-            new() { Id = 6, EmpleadoId = 7, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 20), PorcentajeAsignacion = 60m, Activa = true },
-            new() { Id = 7, EmpleadoId = 8, ClienteId = 1, FechaInicio = new DateTime(2026, 2, 1), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 8, EmpleadoId = 9, ClienteId = 1, FechaInicio = new DateTime(2026, 2, 5), PorcentajeAsignacion = 50m, Activa = true },
-            new() { Id = 9, EmpleadoId = 10, ClienteId = 1, FechaInicio = new DateTime(2026, 2, 10), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 10, EmpleadoId = 11, ClienteId = 1, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 40m, Activa = true },
+            // Guayaquil - Cliente 1
+            new() { Id = 1, EmpleadoId = 1, ClienteId = 1, Rol = "Desarrollador Backend", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 2, EmpleadoId = 2, ClienteId = 1, Rol = "QA", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 75m, Activa = true },
+            new() { Id = 3, EmpleadoId = 3, ClienteId = 1, Rol = "Arquitecto", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true },
+            new() { Id = 4, EmpleadoId = 4, ClienteId = 1, Rol = "Desarrollador Frontend", FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 5, EmpleadoId = 6, ClienteId = 1, Rol = "Desarrollador Backend", FechaInicio = new DateTime(2026, 1, 15), PorcentajeAsignacion = 80m, Activa = true },
+            new() { Id = 6, EmpleadoId = 7, ClienteId = 1, Rol = "QA", FechaInicio = new DateTime(2026, 1, 20), PorcentajeAsignacion = 60m, Activa = true },
+            new() { Id = 7, EmpleadoId = 8, ClienteId = 1, Rol = "Desarrollador Backend", FechaInicio = new DateTime(2026, 2, 1), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 8, EmpleadoId = 9, ClienteId = 1, Rol = "Analista", FechaInicio = new DateTime(2026, 2, 5), PorcentajeAsignacion = 50m, Activa = true },
+            new() { Id = 9, EmpleadoId = 10, ClienteId = 1, Rol = "Desarrollador Frontend", FechaInicio = new DateTime(2026, 2, 10), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 10, EmpleadoId = 11, ClienteId = 1, Rol = "DevOps", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 40m, Activa = true },
             
-            // Quito
-            new() { Id = 11, EmpleadoId = 13, ClienteId = 2, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 12, EmpleadoId = 14, ClienteId = 2, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 80m, Activa = true },
-            new() { Id = 13, EmpleadoId = 15, ClienteId = 2, FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 14, EmpleadoId = 16, ClienteId = 2, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true },
-            new() { Id = 15, EmpleadoId = 17, ClienteId = 2, FechaInicio = new DateTime(2026, 1, 15), PorcentajeAsignacion = 100m, Activa = true },
-            new() { Id = 16, EmpleadoId = 19, ClienteId = 2, FechaInicio = new DateTime(2026, 2, 1), PorcentajeAsignacion = 90m, Activa = true },
-            new() { Id = 17, EmpleadoId = 20, ClienteId = 2, FechaInicio = new DateTime(2026, 2, 5), PorcentajeAsignacion = 60m, Activa = true },
+            // Quito - Cliente 2
+            new() { Id = 11, EmpleadoId = 13, ClienteId = 2, Rol = "Desarrollador", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 12, EmpleadoId = 14, ClienteId = 2, Rol = "QA", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 80m, Activa = true },
+            new() { Id = 13, EmpleadoId = 15, ClienteId = 2, Rol = "Desarrollador", FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 14, EmpleadoId = 16, ClienteId = 2, Rol = "Arquitecto", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true },
+            new() { Id = 15, EmpleadoId = 17, ClienteId = 2, Rol = "Desarrollador", FechaInicio = new DateTime(2026, 1, 15), PorcentajeAsignacion = 100m, Activa = true },
+            new() { Id = 16, EmpleadoId = 19, ClienteId = 2, Rol = "Desarrollador", FechaInicio = new DateTime(2026, 2, 1), PorcentajeAsignacion = 90m, Activa = true },
+            new() { Id = 17, EmpleadoId = 20, ClienteId = 2, Rol = "Scrum Master", FechaInicio = new DateTime(2026, 2, 5), PorcentajeAsignacion = 60m, Activa = true },
             
-            // Asunción
-            new() { Id = 18, EmpleadoId = 5, ClienteId = 3, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 30m, Activa = true },
-            new() { Id = 19, EmpleadoId = 12, ClienteId = 3, FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 40m, Activa = true },
-            new() { Id = 20, EmpleadoId = 18, ClienteId = 3, FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true }
+            // Asunción - Cliente 3
+            new() { Id = 18, EmpleadoId = 5, ClienteId = 3, Rol = "Gerente", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 30m, Activa = true },
+            new() { Id = 19, EmpleadoId = 12, ClienteId = 3, Rol = "Scrum Master", FechaInicio = new DateTime(2026, 1, 10), PorcentajeAsignacion = 40m, Activa = true },
+            new() { Id = 20, EmpleadoId = 18, ClienteId = 3, Rol = "Desarrollador", FechaInicio = new DateTime(2026, 1, 5), PorcentajeAsignacion = 50m, Activa = true }
         };
 
         foreach (var asignacion in asignaciones)
