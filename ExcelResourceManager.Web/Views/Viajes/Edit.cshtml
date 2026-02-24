@@ -1,0 +1,129 @@
+@model ExcelResourceManager.Core.Models.Viaje
+
+@{
+    ViewData["Title"] = "Editar Viaje";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h4><i class="bi bi-pencil"></i> Editar Viaje</h4>
+                </div>
+                <div class="card-body">
+
+                    @if (ViewBag.Conflictos != null && ((List<ExcelResourceManager.Core.Models.Conflicto>)ViewBag.Conflictos).Any())
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <h5 class="alert-heading">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Conflictos Detectados
+                            </h5>
+                            <p>Se han detectado los siguientes conflictos para este viaje:</p>
+                            <ul class="mb-0">
+                                @foreach (var conflicto in (List<ExcelResourceManager.Core.Models.Conflicto>)ViewBag.Conflictos)
+                                {
+                                    <li>
+                                        <strong>
+                                            @switch (conflicto.Nivel)
+                                            {
+                                                case ExcelResourceManager.Core.Enums.NivelConflicto.Critico:
+                                                    <span class="badge bg-danger">CRÍTICO</span>
+                                                    break;
+                                                case ExcelResourceManager.Core.Enums.NivelConflicto.Alto:
+                                                    <span class="badge bg-warning text-dark">ALTO</span>
+                                                    break;
+                                                case ExcelResourceManager.Core.Enums.NivelConflicto.Medio:
+                                                    <span class="badge bg-info text-dark">MEDIO</span>
+                                                    break;
+                                                case ExcelResourceManager.Core.Enums.NivelConflicto.Bajo:
+                                                    <span class="badge bg-secondary">BAJO</span>
+                                                    break;
+                                            }
+                                            @conflicto.Tipo.ToString()
+                                        </strong>
+                                        - @conflicto.Descripcion
+                                        @if (!string.IsNullOrEmpty(conflicto.Recomendacion))
+                                        {
+                                            <br /><small class="text-muted"><i class="bi bi-lightbulb"></i> @conflicto.Recomendacion</small>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-3">
+                            <label asp-for="EmpleadoId" class="form-label">Empleado</label>
+                            <select asp-for="EmpleadoId" class="form-select" asp-items="ViewBag.Empleados">
+                                <option value="">-- Seleccione un empleado --</option>
+                            </select>
+                            <span asp-validation-for="EmpleadoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ClienteDestinoId" class="form-label">Cliente Destino</label>
+                            <select asp-for="ClienteDestinoId" class="form-select" asp-items="ViewBag.Clientes">
+                                <option value="">-- Seleccione un cliente --</option>
+                            </select>
+                            <span asp-validation-for="ClienteDestinoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="UbicacionDestinoId" class="form-label">Ubicación Destino</label>
+                            <select asp-for="UbicacionDestinoId" class="form-select" asp-items="ViewBag.Ubicaciones">
+                                <option value="">-- Seleccione una ubicación --</option>
+                            </select>
+                            <span asp-validation-for="UbicacionDestinoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
+                                    <input asp-for="FechaInicio" type="date" class="form-control" />
+                                    <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
+                                    <input asp-for="FechaFin" type="date" class="form-control" />
+                                    <span asp-validation-for="FechaFin" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Estado" class="form-label">Estado</label>
+                            <select asp-for="Estado" class="form-select">
+                                <option value="0">Planificado</option>
+                                <option value="1">Confirmado</option>
+                                <option value="2">En Curso</option>
+                                <option value="3">Completado</option>
+                                <option value="4">Cancelado</option>
+                            </select>
+                            <span asp-validation-for="Estado" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save"></i> Actualizar Viaje
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

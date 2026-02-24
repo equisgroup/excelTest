@@ -1,0 +1,7 @@
+2026-02-18 17:05:39.046 +00:00 [INF] Seeding test data...
+2026-02-18 17:05:39.167 +00:00 [INF] Iniciando carga de datos de prueba...
+2026-02-18 17:05:39.503 +00:00 [INF] Datos de prueba cargados exitosamente.
+2026-02-18 17:05:39.503 +00:00 [INF] Test data seeded successfully
+2026-02-18 17:05:39.613 +00:00 [INF] Application started successfully
+2026-02-18 17:05:39.765 +00:00 [WRN] No XML encryptor configured. Key {208dc3dd-1ad8-48ee-b756-cf4b6ac4823c} may be persisted to storage in unencrypted form.
+2026-02-18 17:05:46.129 +00:00 [WRN] Failed to determine the https port for redirect.

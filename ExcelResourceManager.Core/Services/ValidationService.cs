@@ -1,0 +1,500 @@
+using ExcelResourceManager.Core.Enums;
+using ExcelResourceManager.Core.Models;
+using ExcelResourceManager.Core.Repositories;
+using Serilog;
+
+namespace ExcelResourceManager.Core.Services;
+
+public class ValidationService : IValidationService
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFeriadoService _feriadoService;
+    
+    public ValidationService(IUnitOfWork unitOfWork, IFeriadoService feriadoService)
+    {
+        _unitOfWork = unitOfWork;
+        _feriadoService = feriadoService;
+    }
+    
+    public async Task<List<Conflicto>> ValidarVacacionAsync(Vacacion vacacion)
+    {
+        var conflictos = new List<Conflicto>();
+        
+        try
+        {
+            var empleado = await _unitOfWork.Empleados.GetByIdAsync(vacacion.EmpleadoId);
+            if (empleado == null) return conflictos;
+            
+            // 1. Verificar conflicto con viajes del mismo empleado
+            var viajes = await _unitOfWork.Viajes.FindAsync(v => 
+                v.EmpleadoId == vacacion.EmpleadoId && 
+                v.Estado != EstadoViaje.Cancelado);
+            
+            foreach (var viaje in viajes.Where(v => v.Id != vacacion.Id))
+            {
+                if (HaySolapamiento(vacacion.FechaInicio, vacacion.FechaFin, viaje.FechaInicio, viaje.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.VacacionVsViaje,
+                        Nivel = NivelConflicto.Critico,
+                        EmpleadoId = vacacion.EmpleadoId,
+                        FechaConflicto = vacacion.FechaInicio,
+                        Descripcion = $"Vacación se solapa con viaje programado del {viaje.FechaInicio:dd/MM/yyyy} al {viaje.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Cancelar o reprogramar el viaje o la vacación",
+                        VacacionId = vacacion.Id,
+                        ViajeId = viaje.Id
+                    });
+                }
+            }
+            
+            // 2. Verificar conflicto con turnos de soporte
+            var turnos = await _unitOfWork.TurnosSoporte.FindAsync(t => t.EmpleadoId == vacacion.EmpleadoId);
+            
+            foreach (var turno in turnos)
+            {
+                if (HaySolapamiento(vacacion.FechaInicio, vacacion.FechaFin, turno.FechaInicio, turno.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.VacacionVsSoporte,
+                        Nivel = NivelConflicto.Critico,
+                        EmpleadoId = vacacion.EmpleadoId,
+                        FechaConflicto = vacacion.FechaInicio,
+                        Descripcion = $"Vacación se solapa con turno de soporte del {turno.FechaInicio:dd/MM/yyyy} al {turno.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Reasignar el turno de soporte a otro empleado",
+                        VacacionId = vacacion.Id,
+                        TurnoSoporteId = turno.Id
+                    });
+                }
+            }
+            
+            // 3. Verificar si cae en feriado (informativo)
+            if (empleado.UbicacionId > 0)
+            {
+                var fechaActual = vacacion.FechaInicio.Date;
+                while (fechaActual <= vacacion.FechaFin.Date)
+                {
+                    if (await _feriadoService.EsFeriadoAsync(empleado.UbicacionId, fechaActual))
+                    {
+                        conflictos.Add(new Conflicto
+                        {
+                            Tipo = TipoConflicto.VacacionEnFeriado,
+                            Nivel = NivelConflicto.Bajo,
+                            EmpleadoId = vacacion.EmpleadoId,
+                            FechaConflicto = fechaActual,
+                            Descripcion = $"La vacación incluye el feriado {fechaActual:dd/MM/yyyy}",
+                            Recomendacion = "Considerar ajustar las fechas para optimizar días de vacación",
+                            VacacionId = vacacion.Id
+                        });
+                        break; // Solo reportar uno
+                    }
+                    fechaActual = fechaActual.AddDays(1);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar vacación {VacacionId}", vacacion.Id);
+        }
+        
+        return conflictos;
+    }
+    
+    public async Task<List<Conflicto>> ValidarViajeAsync(Viaje viaje)
+    {
+        var conflictos = new List<Conflicto>();
+        
+        try
+        {
+            var empleado = await _unitOfWork.Empleados.GetByIdAsync(viaje.EmpleadoId);
+            if (empleado == null) return conflictos;
+            
+            // 1. Verificar conflicto con vacaciones del mismo empleado
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.EmpleadoId == viaje.EmpleadoId && 
+                v.Estado != EstadoVacacion.Rechazada && 
+                v.Estado != EstadoVacacion.Cancelada);
+            
+            foreach (var vacacion in vacaciones.Where(v => v.Id != viaje.Id))
+            {
+                if (HaySolapamiento(viaje.FechaInicio, viaje.FechaFin, vacacion.FechaInicio, vacacion.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.VacacionVsViaje,
+                        Nivel = NivelConflicto.Critico,
+                        EmpleadoId = viaje.EmpleadoId,
+                        FechaConflicto = viaje.FechaInicio,
+                        Descripcion = $"Viaje se solapa con vacación programada del {vacacion.FechaInicio:dd/MM/yyyy} al {vacacion.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Cancelar o reprogramar el viaje o la vacación",
+                        ViajeId = viaje.Id,
+                        VacacionId = vacacion.Id
+                    });
+                }
+            }
+            
+            // 2. Verificar conflicto con turnos de soporte
+            var turnos = await _unitOfWork.TurnosSoporte.FindAsync(t => t.EmpleadoId == viaje.EmpleadoId);
+            
+            foreach (var turno in turnos)
+            {
+                if (HaySolapamiento(viaje.FechaInicio, viaje.FechaFin, turno.FechaInicio, turno.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.ViajeVsSoporte,
+                        Nivel = NivelConflicto.Medio,
+                        EmpleadoId = viaje.EmpleadoId,
+                        FechaConflicto = viaje.FechaInicio,
+                        Descripcion = $"Viaje se solapa con turno de soporte del {turno.FechaInicio:dd/MM/yyyy} al {turno.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Considerar soporte remoto durante el viaje o reasignar el turno",
+                        ViajeId = viaje.Id,
+                        TurnoSoporteId = turno.Id
+                    });
+                }
+            }
+            
+            // 3. Verificar si viaje es en feriado destino
+            if (viaje.UbicacionDestinoId > 0)
+            {
+                var fechaActual = viaje.FechaInicio.Date;
+                while (fechaActual <= viaje.FechaFin.Date)
+                {
+                    if (await _feriadoService.EsFeriadoAsync(viaje.UbicacionDestinoId, fechaActual))
+                    {
+                        conflictos.Add(new Conflicto
+                        {
+                            Tipo = TipoConflicto.ViajeEnFeriado,
+                            Nivel = NivelConflicto.Bajo,
+                            EmpleadoId = viaje.EmpleadoId,
+                            FechaConflicto = fechaActual,
+                            Descripcion = $"El viaje incluye el feriado {fechaActual:dd/MM/yyyy} en destino",
+                            Recomendacion = "Verificar disponibilidad del cliente durante el feriado",
+                            ViajeId = viaje.Id
+                        });
+                        break;
+                    }
+                    fechaActual = fechaActual.AddDays(1);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar viaje {ViajeId}", viaje.Id);
+        }
+        
+        return conflictos;
+    }
+    
+    public async Task<List<Conflicto>> ValidarTurnoSoporteAsync(TurnoSoporte turnoSoporte)
+    {
+        var conflictos = new List<Conflicto>();
+        
+        try
+        {
+            // 1. Verificar conflicto con vacaciones
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.EmpleadoId == turnoSoporte.EmpleadoId && 
+                v.Estado != EstadoVacacion.Rechazada && 
+                v.Estado != EstadoVacacion.Cancelada);
+            
+            foreach (var vacacion in vacaciones)
+            {
+                if (HaySolapamiento(turnoSoporte.FechaInicio, turnoSoporte.FechaFin, vacacion.FechaInicio, vacacion.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.VacacionVsSoporte,
+                        Nivel = NivelConflicto.Critico,
+                        EmpleadoId = turnoSoporte.EmpleadoId,
+                        FechaConflicto = turnoSoporte.FechaInicio,
+                        Descripcion = $"Turno de soporte se solapa con vacación del {vacacion.FechaInicio:dd/MM/yyyy} al {vacacion.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Reasignar el turno a otro empleado",
+                        TurnoSoporteId = turnoSoporte.Id,
+                        VacacionId = vacacion.Id
+                    });
+                }
+            }
+            
+            // 2. Verificar conflicto con viajes
+            var viajes = await _unitOfWork.Viajes.FindAsync(v => 
+                v.EmpleadoId == turnoSoporte.EmpleadoId && 
+                v.Estado != EstadoViaje.Cancelado);
+            
+            foreach (var viaje in viajes)
+            {
+                if (HaySolapamiento(turnoSoporte.FechaInicio, turnoSoporte.FechaFin, viaje.FechaInicio, viaje.FechaFin))
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.ViajeVsSoporte,
+                        Nivel = NivelConflicto.Medio,
+                        EmpleadoId = turnoSoporte.EmpleadoId,
+                        FechaConflicto = turnoSoporte.FechaInicio,
+                        Descripcion = $"Turno de soporte se solapa con viaje del {viaje.FechaInicio:dd/MM/yyyy} al {viaje.FechaFin:dd/MM/yyyy}",
+                        Recomendacion = "Considerar soporte remoto durante el viaje",
+                        TurnoSoporteId = turnoSoporte.Id,
+                        ViajeId = viaje.Id
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar turno soporte {TurnoId}", turnoSoporte.Id);
+        }
+        
+        return conflictos;
+    }
+    
+    public async Task<List<Conflicto>> ValidarTodosAsync()
+    {
+        var conflictos = new List<Conflicto>();
+        
+        try
+        {
+            // Validar asignaciones de roles (reemplaza sobreasignación)
+            conflictos.AddRange(await ValidateClientRoleAssignments());
+            conflictos.AddRange(await ValidateRoleCoverage());
+            
+            // Validar todas las vacaciones
+            var vacaciones = await _unitOfWork.Vacaciones.GetAllAsync();
+            foreach (var vacacion in vacaciones.Where(v => v.Estado != EstadoVacacion.Cancelada && v.Estado != EstadoVacacion.Rechazada))
+            {
+                var conflictosVacacion = await ValidarVacacionAsync(vacacion);
+                conflictos.AddRange(conflictosVacacion);
+            }
+            
+            // Validar todos los viajes
+            var viajes = await _unitOfWork.Viajes.GetAllAsync();
+            foreach (var viaje in viajes.Where(v => v.Estado != EstadoViaje.Cancelado))
+            {
+                var conflictosViaje = await ValidarViajeAsync(viaje);
+                conflictos.AddRange(conflictosViaje);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar todos los conflictos");
+        }
+        
+        return conflictos.DistinctBy(c => $"{c.Tipo}-{c.EmpleadoId}-{c.VacacionId}-{c.ViajeId}-{c.TurnoSoporteId}").ToList();
+    }
+    
+    public async Task<List<Conflicto>> ValidarTodosFuturosAsync()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            // Validar asignaciones de roles (reemplaza sobreasignación)
+            conflictos.AddRange(await ValidateClientRoleAssignments());
+            conflictos.AddRange(await ValidateRoleCoverage());
+            
+            // Validar solo vacaciones futuras
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                v.Estado != EstadoVacacion.Cancelada && 
+                v.Estado != EstadoVacacion.Rechazada);
+            
+            foreach (var vacacion in vacaciones)
+            {
+                var conflictosVacacion = await ValidarVacacionAsync(vacacion);
+                conflictos.AddRange(conflictosVacacion);
+            }
+            
+            // Validar solo viajes futuros
+            var viajes = await _unitOfWork.Viajes.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                v.Estado != EstadoViaje.Cancelado);
+            
+            foreach (var viaje in viajes)
+            {
+                var conflictosViaje = await ValidarViajeAsync(viaje);
+                conflictos.AddRange(conflictosViaje);
+            }
+            
+            // Validar solo turnos de soporte futuros
+            var turnos = await _unitOfWork.TurnosSoporte.FindAsync(t => t.FechaFin >= hoy);
+            
+            foreach (var turno in turnos)
+            {
+                var conflictosTurno = await ValidarTurnoSoporteAsync(turno);
+                conflictos.AddRange(conflictosTurno);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar conflictos futuros");
+        }
+        
+        return conflictos.DistinctBy(c => $"{c.Tipo}-{c.EmpleadoId}-{c.VacacionId}-{c.ViajeId}-{c.TurnoSoporteId}").ToList();
+    }
+    
+    private bool HaySolapamiento(DateTime inicio1, DateTime fin1, DateTime inicio2, DateTime fin2)
+    {
+        return inicio1.Date <= fin2.Date && fin1.Date >= inicio2.Date;
+    }
+    
+    // NUEVO: Validar asignaciones de roles a clientes
+    private async Task<List<Conflicto>> ValidateClientRoleAssignments()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            var rolesCliente = await _unitOfWork.RolesCliente.GetAllAsync();
+            var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => a.Activa);
+            
+            foreach (var rolRequerido in rolesCliente.Where(r => r.FechaFin >= hoy))
+            {
+                // Verificar si el rol está asignado
+                var asignacionesRol = asignaciones.Where(a => 
+                    a.ClienteId == rolRequerido.ClienteId && 
+                    a.Rol == rolRequerido.Rol &&
+                    a.Activa).ToList();
+                
+                if (!asignacionesRol.Any())
+                {
+                    // ROL NO ASIGNADO
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.RolNoAsignado,
+                        Nivel = NivelConflicto.Alto,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente requiere {rolRequerido.CantidadRequerida} {rolRequerido.Rol} pero no tiene asignaciones",
+                        Recomendacion = $"Asignar empleados al rol {rolRequerido.Rol} para el cliente",
+                        Resuelto = false
+                    });
+                }
+                else if (asignacionesRol.Count < rolRequerido.CantidadRequerida)
+                {
+                    // ROL INSUFICIENTEMENTE ASIGNADO
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.RolNoAsignado,
+                        Nivel = NivelConflicto.Medio,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente requiere {rolRequerido.CantidadRequerida} {rolRequerido.Rol} pero solo tiene {asignacionesRol.Count}",
+                        Recomendacion = $"Asignar {rolRequerido.CantidadRequerida - asignacionesRol.Count} empleados más al rol",
+                        Resuelto = false
+                    });
+                }
+                
+                // Verificar cobertura excesiva
+                if (asignacionesRol.Count > rolRequerido.CantidadRequerida)
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.CoberturaSuperaContratada,
+                        Nivel = NivelConflicto.Bajo,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente tiene {asignacionesRol.Count} {rolRequerido.Rol} asignados pero solo contrató {rolRequerido.CantidadRequerida}",
+                        Recomendacion = "Revisar contratos o reducir asignaciones",
+                        Resuelto = false
+                    });
+                }
+                
+                // Verificar asignaciones fuera de contrato
+                var cliente = await _unitOfWork.Clientes.GetByIdAsync(rolRequerido.ClienteId);
+                if (cliente?.FechaContratoInicio != null && cliente?.FechaContratoFin != null)
+                {
+                    foreach (var asignacion in asignacionesRol)
+                    {
+                        if (asignacion.FechaInicio < cliente.FechaContratoInicio || 
+                            (asignacion.FechaFin.HasValue && asignacion.FechaFin > cliente.FechaContratoFin))
+                        {
+                            conflictos.Add(new Conflicto
+                            {
+                                Tipo = TipoConflicto.AsignacionFueraContrato,
+                                Nivel = NivelConflicto.Critico,
+                                EmpleadoId = asignacion.EmpleadoId,
+                                FechaConflicto = asignacion.FechaInicio,
+                                Descripcion = $"Asignación de empleado fuera del período de contrato ({cliente.FechaContratoInicio:dd/MM/yyyy} - {cliente.FechaContratoFin:dd/MM/yyyy})",
+                                Recomendacion = "Ajustar fechas de asignación o extender contrato",
+                                Resuelto = false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar asignaciones de roles");
+        }
+        
+        return conflictos;
+    }
+    
+    // NUEVO: Validar cobertura de roles considerando vacaciones
+    private async Task<List<Conflicto>> ValidateRoleCoverage()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                (v.Estado == EstadoVacacion.Aprobada || v.Estado == EstadoVacacion.Solicitada));
+            
+            var rolesCliente = await _unitOfWork.RolesCliente.GetAllAsync();
+            var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => a.Activa);
+            
+            foreach (var vacacion in vacaciones)
+            {
+                // Obtener asignaciones del empleado de vacaciones
+                var asignacionesEmpleado = asignaciones.Where(a => a.EmpleadoId == vacacion.EmpleadoId).ToList();
+                
+                foreach (var asignacion in asignacionesEmpleado)
+                {
+                    // Verificar si hay solapamiento con las vacaciones
+                    if (HaySolapamiento(vacacion.FechaInicio, vacacion.FechaFin, 
+                                       asignacion.FechaInicio, asignacion.FechaFin ?? DateTime.MaxValue))
+                    {
+                        // Buscar el rol requerido
+                        var rolRequerido = rolesCliente.FirstOrDefault(r => 
+                            r.ClienteId == asignacion.ClienteId && 
+                            r.Rol == asignacion.Rol);
+                        
+                        if (rolRequerido != null)
+                        {
+                            // Contar empleados activos en ese rol (excluyendo el de vacaciones)
+                            var empleadosActivos = asignaciones.Count(a => 
+                                a.ClienteId == asignacion.ClienteId && 
+                                a.Rol == asignacion.Rol && 
+                                a.EmpleadoId != vacacion.EmpleadoId &&
+                                a.Activa);
+                            
+                            if (empleadosActivos < rolRequerido.CantidadRequerida)
+                            {
+                                var empleado = await _unitOfWork.Empleados.GetByIdAsync(vacacion.EmpleadoId);
+                                conflictos.Add(new Conflicto
+                                {
+                                    Tipo = TipoConflicto.RolSinCobertura,
+                                    Nivel = NivelConflicto.Alto,
+                                    EmpleadoId = vacacion.EmpleadoId,
+                                    VacacionId = vacacion.Id,
+                                    FechaConflicto = vacacion.FechaInicio,
+                                    Descripcion = $"Rol {asignacion.Rol} quedará sin cobertura completa durante vacaciones de {empleado?.NombreCompleto}. Requerido: {rolRequerido.CantidadRequerida}, Disponible: {empleadosActivos}",
+                                    Recomendacion = "Asignar empleado temporal o reagendar vacaciones",
+                                    Resuelto = false
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar cobertura de roles");
+        }
+        
+        return conflictos;
+    }
+}
