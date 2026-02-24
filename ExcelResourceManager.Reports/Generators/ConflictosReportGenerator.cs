@@ -432,7 +432,10 @@ public class ConflictosReportGenerator : IReportService
             TipoConflicto.ViajeVsSoporte => "Viaje vs Soporte",
             TipoConflicto.ViajeEnFeriado => "Viaje en Feriado",
             TipoConflicto.VacacionEnFeriado => "Vacación en Feriado",
-            TipoConflicto.Sobreasignacion => "Sobreasignación",
+            TipoConflicto.RolNoAsignado => "Rol No Asignado",
+            TipoConflicto.RolSinCobertura => "Rol Sin Cobertura",
+            TipoConflicto.CoberturaSuperaContratada => "Cobertura Supera Contratada",
+            TipoConflicto.AsignacionFueraContrato => "Asignación Fuera de Contrato",
             _ => tipo.ToString()
         };
     }

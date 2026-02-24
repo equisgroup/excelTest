@@ -254,29 +254,9 @@ public class ValidationService : IValidationService
         
         try
         {
-            // Validar sobreasignación
-            var empleados = await _unitOfWork.Empleados.GetAllAsync();
-            foreach (var empleado in empleados.Where(e => e.Activo))
-            {
-                var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => 
-                    a.EmpleadoId == empleado.Id && a.Activa);
-                
-                var porcentajeTotal = asignaciones.Sum(a => a.PorcentajeAsignacion);
-                
-                if (porcentajeTotal > 100)
-                {
-                    conflictos.Add(new Conflicto
-                    {
-                        Tipo = TipoConflicto.Sobreasignacion,
-                        Nivel = NivelConflicto.Alto,
-                        EmpleadoId = empleado.Id,
-                        FechaConflicto = DateTime.Now,
-                        Descripcion = $"Empleado {empleado.NombreCompleto} está sobreasignado con {porcentajeTotal}%",
-                        Recomendacion = "Reducir asignaciones o redistribuir carga de trabajo",
-                        Resuelto = false
-                    });
-                }
-            }
+            // Validar asignaciones de roles (reemplaza sobreasignación)
+            conflictos.AddRange(await ValidateClientRoleAssignments());
+            conflictos.AddRange(await ValidateRoleCoverage());
             
             // Validar todas las vacaciones
             var vacaciones = await _unitOfWork.Vacaciones.GetAllAsync();
@@ -309,29 +289,9 @@ public class ValidationService : IValidationService
         
         try
         {
-            // Validar sobreasignación (siempre relevante)
-            var empleados = await _unitOfWork.Empleados.GetAllAsync();
-            foreach (var empleado in empleados.Where(e => e.Activo))
-            {
-                var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => 
-                    a.EmpleadoId == empleado.Id && a.Activa);
-                
-                var porcentajeTotal = asignaciones.Sum(a => a.PorcentajeAsignacion);
-                
-                if (porcentajeTotal > 100)
-                {
-                    conflictos.Add(new Conflicto
-                    {
-                        Tipo = TipoConflicto.Sobreasignacion,
-                        Nivel = NivelConflicto.Alto,
-                        EmpleadoId = empleado.Id,
-                        FechaConflicto = DateTime.Now,
-                        Descripcion = $"Empleado {empleado.NombreCompleto} está sobreasignado con {porcentajeTotal}%",
-                        Recomendacion = "Reducir asignaciones o redistribuir carga de trabajo",
-                        Resuelto = false
-                    });
-                }
-            }
+            // Validar asignaciones de roles (reemplaza sobreasignación)
+            conflictos.AddRange(await ValidateClientRoleAssignments());
+            conflictos.AddRange(await ValidateRoleCoverage());
             
             // Validar solo vacaciones futuras
             var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
@@ -376,5 +336,165 @@ public class ValidationService : IValidationService
     private bool HaySolapamiento(DateTime inicio1, DateTime fin1, DateTime inicio2, DateTime fin2)
     {
         return inicio1.Date <= fin2.Date && fin1.Date >= inicio2.Date;
+    }
+    
+    // NUEVO: Validar asignaciones de roles a clientes
+    private async Task<List<Conflicto>> ValidateClientRoleAssignments()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            var rolesCliente = await _unitOfWork.RolesCliente.GetAllAsync();
+            var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => a.Activa);
+            
+            foreach (var rolRequerido in rolesCliente.Where(r => r.FechaFin >= hoy))
+            {
+                // Verificar si el rol está asignado
+                var asignacionesRol = asignaciones.Where(a => 
+                    a.ClienteId == rolRequerido.ClienteId && 
+                    a.Rol == rolRequerido.Rol &&
+                    a.Activa).ToList();
+                
+                if (!asignacionesRol.Any())
+                {
+                    // ROL NO ASIGNADO
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.RolNoAsignado,
+                        Nivel = NivelConflicto.Alto,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente requiere {rolRequerido.CantidadRequerida} {rolRequerido.Rol} pero no tiene asignaciones",
+                        Recomendacion = $"Asignar empleados al rol {rolRequerido.Rol} para el cliente",
+                        Resuelto = false
+                    });
+                }
+                else if (asignacionesRol.Count < rolRequerido.CantidadRequerida)
+                {
+                    // ROL INSUFICIENTEMENTE ASIGNADO
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.RolNoAsignado,
+                        Nivel = NivelConflicto.Medio,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente requiere {rolRequerido.CantidadRequerida} {rolRequerido.Rol} pero solo tiene {asignacionesRol.Count}",
+                        Recomendacion = $"Asignar {rolRequerido.CantidadRequerida - asignacionesRol.Count} empleados más al rol",
+                        Resuelto = false
+                    });
+                }
+                
+                // Verificar cobertura excesiva
+                if (asignacionesRol.Count > rolRequerido.CantidadRequerida)
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.CoberturaSuperaContratada,
+                        Nivel = NivelConflicto.Bajo,
+                        FechaConflicto = rolRequerido.FechaInicio,
+                        Descripcion = $"Cliente tiene {asignacionesRol.Count} {rolRequerido.Rol} asignados pero solo contrató {rolRequerido.CantidadRequerida}",
+                        Recomendacion = "Revisar contratos o reducir asignaciones",
+                        Resuelto = false
+                    });
+                }
+                
+                // Verificar asignaciones fuera de contrato
+                var cliente = await _unitOfWork.Clientes.GetByIdAsync(rolRequerido.ClienteId);
+                if (cliente?.FechaContratoInicio != null && cliente?.FechaContratoFin != null)
+                {
+                    foreach (var asignacion in asignacionesRol)
+                    {
+                        if (asignacion.FechaInicio < cliente.FechaContratoInicio || 
+                            (asignacion.FechaFin.HasValue && asignacion.FechaFin > cliente.FechaContratoFin))
+                        {
+                            conflictos.Add(new Conflicto
+                            {
+                                Tipo = TipoConflicto.AsignacionFueraContrato,
+                                Nivel = NivelConflicto.Critico,
+                                EmpleadoId = asignacion.EmpleadoId,
+                                FechaConflicto = asignacion.FechaInicio,
+                                Descripcion = $"Asignación de empleado fuera del período de contrato ({cliente.FechaContratoInicio:dd/MM/yyyy} - {cliente.FechaContratoFin:dd/MM/yyyy})",
+                                Recomendacion = "Ajustar fechas de asignación o extender contrato",
+                                Resuelto = false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar asignaciones de roles");
+        }
+        
+        return conflictos;
+    }
+    
+    // NUEVO: Validar cobertura de roles considerando vacaciones
+    private async Task<List<Conflicto>> ValidateRoleCoverage()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                (v.Estado == EstadoVacacion.Aprobada || v.Estado == EstadoVacacion.Solicitada));
+            
+            var rolesCliente = await _unitOfWork.RolesCliente.GetAllAsync();
+            var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => a.Activa);
+            
+            foreach (var vacacion in vacaciones)
+            {
+                // Obtener asignaciones del empleado de vacaciones
+                var asignacionesEmpleado = asignaciones.Where(a => a.EmpleadoId == vacacion.EmpleadoId).ToList();
+                
+                foreach (var asignacion in asignacionesEmpleado)
+                {
+                    // Verificar si hay solapamiento con las vacaciones
+                    if (HaySolapamiento(vacacion.FechaInicio, vacacion.FechaFin, 
+                                       asignacion.FechaInicio, asignacion.FechaFin ?? DateTime.MaxValue))
+                    {
+                        // Buscar el rol requerido
+                        var rolRequerido = rolesCliente.FirstOrDefault(r => 
+                            r.ClienteId == asignacion.ClienteId && 
+                            r.Rol == asignacion.Rol);
+                        
+                        if (rolRequerido != null)
+                        {
+                            // Contar empleados activos en ese rol (excluyendo el de vacaciones)
+                            var empleadosActivos = asignaciones.Count(a => 
+                                a.ClienteId == asignacion.ClienteId && 
+                                a.Rol == asignacion.Rol && 
+                                a.EmpleadoId != vacacion.EmpleadoId &&
+                                a.Activa);
+                            
+                            if (empleadosActivos < rolRequerido.CantidadRequerida)
+                            {
+                                var empleado = await _unitOfWork.Empleados.GetByIdAsync(vacacion.EmpleadoId);
+                                conflictos.Add(new Conflicto
+                                {
+                                    Tipo = TipoConflicto.RolSinCobertura,
+                                    Nivel = NivelConflicto.Alto,
+                                    EmpleadoId = vacacion.EmpleadoId,
+                                    VacacionId = vacacion.Id,
+                                    FechaConflicto = vacacion.FechaInicio,
+                                    Descripcion = $"Rol {asignacion.Rol} quedará sin cobertura completa durante vacaciones de {empleado?.NombreCompleto}. Requerido: {rolRequerido.CantidadRequerida}, Disponible: {empleadosActivos}",
+                                    Recomendacion = "Asignar empleado temporal o reagendar vacaciones",
+                                    Resuelto = false
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar cobertura de roles");
+        }
+        
+        return conflictos;
     }
 }
