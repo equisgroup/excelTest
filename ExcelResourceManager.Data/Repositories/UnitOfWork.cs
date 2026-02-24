@@ -10,6 +10,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Cliente>? _clientes;
     private IRepository<Empleado>? _empleados;
     private IRepository<AsignacionCliente>? _asignacionesCliente;
+    private IRepository<RolCliente>? _rolesCliente;
     private IRepository<Vacacion>? _vacaciones;
     private IRepository<Viaje>? _viajes;
     private IRepository<TurnoSoporte>? _turnosSoporte;
@@ -32,6 +33,9 @@ public class UnitOfWork : IUnitOfWork
     
     public IRepository<AsignacionCliente> AsignacionesCliente => 
         _asignacionesCliente ??= new Repository<AsignacionCliente>(_context);
+    
+    public IRepository<RolCliente> RolesCliente => 
+        _rolesCliente ??= new Repository<RolCliente>(_context);
     
     public IRepository<Vacacion> Vacaciones => 
         _vacaciones ??= new Repository<Vacacion>(_context);

@@ -8,6 +8,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<Cliente> Clientes { get; }
     IRepository<Empleado> Empleados { get; }
     IRepository<AsignacionCliente> AsignacionesCliente { get; }
+    IRepository<RolCliente> RolesCliente { get; }
     IRepository<Vacacion> Vacaciones { get; }
     IRepository<Viaje> Viajes { get; }
     IRepository<TurnoSoporte> TurnosSoporte { get; }

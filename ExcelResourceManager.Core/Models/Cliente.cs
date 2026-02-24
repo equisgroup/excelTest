@@ -11,6 +11,10 @@ public class Cliente
     public string Email { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
     
+    // Fechas de contrato
+    public DateTime? FechaContratoInicio { get; set; }
+    public DateTime? FechaContratoFin { get; set; }
+    
     [BsonIgnore]
     public Ubicacion? Ubicacion { get; set; }
 }
