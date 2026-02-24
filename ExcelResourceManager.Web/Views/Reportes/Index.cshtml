@@ -62,11 +62,13 @@
                             <li>Análisis de asignaciones</li>
                             <li>Tendencias y proyecciones</li>
                         </ul>
-                        <button type="button" class="btn btn-primary w-100" disabled>
-                            <i class="bi bi-download"></i> Generar Dashboard (Próximamente)
-                        </button>
+                        <form asp-action="GenerarDashboard" method="post">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-download"></i> Generar Dashboard Gerencial
+                            </button>
+                        </form>
                         <small class="text-muted mt-2 d-block">
-                            Funcionalidad en desarrollo
+                            El reporte se descarga automáticamente en formato Excel (.xlsx)
                         </small>
                     </div>
                 </div>

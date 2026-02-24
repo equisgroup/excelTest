@@ -74,24 +74,16 @@ public class VacacionesController : Controller
             {
                 vacacion.Estado = ExcelResourceManager.Core.Enums.EstadoVacacion.Solicitada;
                 
-                // Validar conflictos
+                // Validar conflictos (solo para mostrar advertencia, no se guardan)
                 var conflictos = await _validationService.ValidarVacacionAsync(vacacion);
                 vacacion.TieneConflictos = conflictos.Any();
                 
                 // Crear la vacación
                 var vacacionId = await _vacacionService.CrearAsync(vacacion);
                 
-                // Guardar los conflictos detectados
-                foreach (var conflicto in conflictos)
-                {
-                    conflicto.VacacionId = vacacionId;
-                    await _unitOfWork.Conflictos.InsertAsync(conflicto);
-                }
-                await _unitOfWork.CommitAsync();
-                
                 if (conflictos.Any(c => c.Nivel == ExcelResourceManager.Core.Enums.NivelConflicto.Critico))
                 {
-                    TempData["Warning"] = $"Vacación creada con {conflictos.Count} conflicto(s) detectado(s)";
+                    TempData["Warning"] = $"Vacación creada con {conflictos.Count} conflicto(s) detectado(s). Puedes verlos en la página de Conflictos.";
                 }
                 else
                 {

@@ -28,7 +28,9 @@ public class ConflictosReportGenerator : IReportService
                 fechaInicio?.ToString("dd/MM/yyyy") ?? "inicio", 
                 fechaFin?.ToString("dd/MM/yyyy") ?? "fin");
 
-            var conflictos = (await _unitOfWork.Conflictos.GetAllAsync()).ToList();
+            // Calcular conflictos on-demand (solo futuros)
+            _logger.Information("Calculando conflictos futuros on-demand para el reporte");
+            var conflictos = (await _validationService.ValidarTodosFuturosAsync()).ToList();
             
             // Filtrar por fecha si se proporciona
             if (fechaInicio.HasValue)
@@ -39,6 +41,8 @@ public class ConflictosReportGenerator : IReportService
             {
                 conflictos = conflictos.Where(c => c.FechaConflicto <= fechaFin.Value).ToList();
             }
+
+            _logger.Information("Se encontraron {Count} conflictos para el reporte", conflictos.Count);
 
             var empleados = (await _unitOfWork.Empleados.GetAllAsync()).ToList();
 
@@ -272,7 +276,10 @@ public class ConflictosReportGenerator : IReportService
             var asignaciones = (await _unitOfWork.AsignacionesCliente.GetAllAsync()).ToList();
             var vacaciones = (await _unitOfWork.Vacaciones.GetAllAsync()).ToList();
             var viajes = (await _unitOfWork.Viajes.GetAllAsync()).ToList();
-            var conflictos = (await _unitOfWork.Conflictos.GetAllAsync()).ToList();
+            
+            // Calcular conflictos on-demand (solo futuros)
+            _logger.Information("Calculando conflictos futuros on-demand para el dashboard");
+            var conflictos = (await _validationService.ValidarTodosFuturosAsync()).ToList();
 
             using var workbook = new XLWorkbook();
             var worksheet = workbook.Worksheets.Add("Dashboard Gerencial");
@@ -374,7 +381,7 @@ public class ConflictosReportGenerator : IReportService
             currentRow += 2;
 
             // Resumen de conflictos
-            worksheet.Cell(currentRow, 1).Value = "RESUMEN DE CONFLICTOS";
+            worksheet.Cell(currentRow, 1).Value = "RESUMEN DE CONFLICTOS (Futuros)";
             worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
             worksheet.Cell(currentRow, 1).Style.Font.FontSize = 12;
             worksheet.Range(currentRow, 1, currentRow, 3).Merge();
@@ -383,12 +390,6 @@ public class ConflictosReportGenerator : IReportService
             worksheet.Cell(currentRow, 1).Value = "Total Conflictos";
             worksheet.Cell(currentRow, 2).Value = conflictos.Count;
             worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
-            currentRow++;
-
-            worksheet.Cell(currentRow, 1).Value = "Conflictos No Resueltos";
-            worksheet.Cell(currentRow, 2).Value = conflictos.Count(c => !c.Resuelto);
-            worksheet.Cell(currentRow, 1).Style.Font.Bold = true;
-            worksheet.Cell(currentRow, 2).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFE6E6");
             currentRow++;
 
             worksheet.Cell(currentRow, 1).Value = "Críticos";

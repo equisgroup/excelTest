@@ -28,7 +28,10 @@ public class ConflictosController : Controller
     {
         try
         {
-            var conflictos = await _unitOfWork.Conflictos.GetAllAsync();
+            _logger.LogInformation("Calculando conflictos futuros on-demand");
+            
+            // Calcular conflictos on-demand (solo futuros)
+            var conflictos = await _validationService.ValidarTodosFuturosAsync();
             var empleados = await _empleadoService.ObtenerTodosAsync();
             
             // Crear ViewModels con información del empleado
@@ -48,73 +51,16 @@ public class ConflictosController : Controller
                     Recomendacion = c.Recomendacion,
                     Resuelto = c.Resuelto
                 };
-            }).OrderByDescending(c => c.FechaConflicto).ToList();
+            }).OrderByDescending(c => c.Nivel).ThenBy(c => c.FechaConflicto).ToList();
+            
+            _logger.LogInformation("Se encontraron {Count} conflictos futuros", conflictosViewModel.Count);
             
             return View(conflictosViewModel);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al cargar conflictos");
+            _logger.LogError(ex, "Error al calcular conflictos");
             return View(new List<ConflictoViewModel>());
         }
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Resolver(int id)
-    {
-        try
-        {
-            var conflicto = await _unitOfWork.Conflictos.GetByIdAsync(id);
-            if (conflicto != null)
-            {
-                conflicto.Resuelto = true;
-                await _unitOfWork.Conflictos.UpdateAsync(conflicto);
-                await _unitOfWork.CommitAsync();
-                TempData["Success"] = "Conflicto marcado como resuelto";
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al resolver conflicto {id}");
-            TempData["Error"] = "Error al resolver el conflicto";
-        }
-        return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> RecalcularConflictos(int año)
-    {
-        try
-        {
-            // Eliminar conflictos existentes del año seleccionado
-            var conflictosExistentes = await _unitOfWork.Conflictos.FindAsync(c => 
-                c.FechaConflicto.Year == año);
-            
-            foreach (var conflicto in conflictosExistentes)
-            {
-                await _unitOfWork.Conflictos.DeleteAsync(conflicto.Id);
-            }
-            await _unitOfWork.CommitAsync();
-            
-            // Recalcular todos los conflictos
-            var nuevosConflictos = await _validationService.ValidarTodosAsync();
-            
-            // Filtrar solo los del año seleccionado y guardar
-            var conflictosDelAño = nuevosConflictos.Where(c => c.FechaConflicto.Year == año).ToList();
-            
-            foreach (var conflicto in conflictosDelAño)
-            {
-                await _unitOfWork.Conflictos.InsertAsync(conflicto);
-            }
-            await _unitOfWork.CommitAsync();
-            
-            TempData["Success"] = $"Se recalcularon {conflictosDelAño.Count} conflicto(s) para el año {año}";
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error al recalcular conflictos del año {año}");
-            TempData["Error"] = "Error al recalcular conflictos";
-        }
-        return RedirectToAction(nameof(Index));
     }
 }

@@ -8,4 +8,5 @@ public interface IValidationService
     Task<List<Conflicto>> ValidarViajeAsync(Viaje viaje);
     Task<List<Conflicto>> ValidarTurnoSoporteAsync(TurnoSoporte turnoSoporte);
     Task<List<Conflicto>> ValidarTodosAsync();
+    Task<List<Conflicto>> ValidarTodosFuturosAsync();
 }

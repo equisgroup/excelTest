@@ -302,6 +302,77 @@ public class ValidationService : IValidationService
         return conflictos.DistinctBy(c => $"{c.Tipo}-{c.EmpleadoId}-{c.VacacionId}-{c.ViajeId}-{c.TurnoSoporteId}").ToList();
     }
     
+    public async Task<List<Conflicto>> ValidarTodosFuturosAsync()
+    {
+        var conflictos = new List<Conflicto>();
+        var hoy = DateTime.Now.Date;
+        
+        try
+        {
+            // Validar sobreasignación (siempre relevante)
+            var empleados = await _unitOfWork.Empleados.GetAllAsync();
+            foreach (var empleado in empleados.Where(e => e.Activo))
+            {
+                var asignaciones = await _unitOfWork.AsignacionesCliente.FindAsync(a => 
+                    a.EmpleadoId == empleado.Id && a.Activa);
+                
+                var porcentajeTotal = asignaciones.Sum(a => a.PorcentajeAsignacion);
+                
+                if (porcentajeTotal > 100)
+                {
+                    conflictos.Add(new Conflicto
+                    {
+                        Tipo = TipoConflicto.Sobreasignacion,
+                        Nivel = NivelConflicto.Alto,
+                        EmpleadoId = empleado.Id,
+                        FechaConflicto = DateTime.Now,
+                        Descripcion = $"Empleado {empleado.NombreCompleto} está sobreasignado con {porcentajeTotal}%",
+                        Recomendacion = "Reducir asignaciones o redistribuir carga de trabajo",
+                        Resuelto = false
+                    });
+                }
+            }
+            
+            // Validar solo vacaciones futuras
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                v.Estado != EstadoVacacion.Cancelada && 
+                v.Estado != EstadoVacacion.Rechazada);
+            
+            foreach (var vacacion in vacaciones)
+            {
+                var conflictosVacacion = await ValidarVacacionAsync(vacacion);
+                conflictos.AddRange(conflictosVacacion);
+            }
+            
+            // Validar solo viajes futuros
+            var viajes = await _unitOfWork.Viajes.FindAsync(v => 
+                v.FechaFin >= hoy && 
+                v.Estado != EstadoViaje.Cancelado);
+            
+            foreach (var viaje in viajes)
+            {
+                var conflictosViaje = await ValidarViajeAsync(viaje);
+                conflictos.AddRange(conflictosViaje);
+            }
+            
+            // Validar solo turnos de soporte futuros
+            var turnos = await _unitOfWork.TurnosSoporte.FindAsync(t => t.FechaFin >= hoy);
+            
+            foreach (var turno in turnos)
+            {
+                var conflictosTurno = await ValidarTurnoSoporteAsync(turno);
+                conflictos.AddRange(conflictosTurno);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al validar conflictos futuros");
+        }
+        
+        return conflictos.DistinctBy(c => $"{c.Tipo}-{c.EmpleadoId}-{c.VacacionId}-{c.ViajeId}-{c.TurnoSoporteId}").ToList();
+    }
+    
     private bool HaySolapamiento(DateTime inicio1, DateTime fin1, DateTime inicio2, DateTime fin2)
     {
         return inicio1.Date <= fin2.Date && fin1.Date >= inicio2.Date;

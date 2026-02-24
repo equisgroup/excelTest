@@ -25,6 +25,7 @@ public class ReportesController : Controller
     {
         try
         {
+            _logger.LogInformation("Generando reporte de conflictos on-demand");
             var filePath = await _reportService.GenerarReporteConflictosAsync();
             
             if (System.IO.File.Exists(filePath))
@@ -41,6 +42,32 @@ public class ReportesController : Controller
         {
             _logger.LogError(ex, "Error al generar reporte de conflictos");
             TempData["Error"] = "Error al generar el reporte";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> GenerarDashboard()
+    {
+        try
+        {
+            _logger.LogInformation("Generando dashboard gerencial on-demand");
+            var filePath = await _reportService.GenerarDashboardGerencialAsync();
+            
+            if (System.IO.File.Exists(filePath))
+            {
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var fileName = Path.GetFileName(filePath);
+                return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            
+            TempData["Error"] = "No se pudo generar el dashboard";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al generar dashboard gerencial");
+            TempData["Error"] = "Error al generar el dashboard";
             return RedirectToAction(nameof(Index));
         }
     }
