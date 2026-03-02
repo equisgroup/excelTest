@@ -4,6 +4,7 @@ using ExcelResourceManager.Core.Enums;
 using ExcelResourceManager.Core.Repositories;
 using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace ExcelResourceManager.Web.Controllers;
 
@@ -80,9 +81,9 @@ public class ViajesController : Controller
     {
         try
         {
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View();
         }
         catch (Exception ex)
@@ -119,18 +120,18 @@ public class ViajesController : Controller
                 return RedirectToAction(nameof(Index));
             }
             
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View(viaje);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al crear viaje");
             TempData["Error"] = "Error al crear el viaje";
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View(viaje);
         }
     }
@@ -147,9 +148,9 @@ public class ViajesController : Controller
                 return RedirectToAction(nameof(Index));
             }
             
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View(viaje);
         }
         catch (Exception ex)
@@ -177,18 +178,18 @@ public class ViajesController : Controller
                 return RedirectToAction(nameof(Index));
             }
             
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View(viaje);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al actualizar viaje");
             TempData["Error"] = "Error al actualizar el viaje";
-            ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
-            ViewBag.Clientes = await _clienteService.ObtenerActivosAsync();
-            ViewBag.Ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+            ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
+            ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
+            ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
             return View(viaje);
         }
     }
