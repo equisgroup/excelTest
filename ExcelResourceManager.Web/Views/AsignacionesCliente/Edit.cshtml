@@ -4,7 +4,7 @@
     ViewData["Title"] = "Editar Asignación de Empleado";
     var empleados = ViewBag.Empleados as List<ExcelResourceManager.Core.Models.Empleado> ?? new List<ExcelResourceManager.Core.Models.Empleado>();
     var clientes = ViewBag.Clientes as List<ExcelResourceManager.Core.Models.Cliente> ?? new List<ExcelResourceManager.Core.Models.Cliente>();
-    var rolesCliente = ViewBag.RolesCliente as List<ExcelResourceManager.Core.Models.RolCliente> ?? new List<ExcelResourceManager.Core.Models.RolCliente>();
+    var roles = ViewBag.Roles as List<string> ?? new List<string>();
 }
 
 <div class="container">
@@ -33,13 +33,13 @@
 
                         <div class="mb-3">
                             <label asp-for="Rol" class="form-label">Rol</label>
-                            <input asp-for="Rol" class="form-control" list="rolesSugeridos" placeholder="Ej: Desarrollador, QA, Analista" required />
-                            <datalist id="rolesSugeridos">
-                                @foreach (var rol in rolesCliente.Select(r => r.Rol).Distinct())
+                            <select asp-for="Rol" class="form-select" required>
+                                <option value="">-- Seleccione un rol --</option>
+                                @foreach (var rol in roles)
                                 {
-                                    <option value="@rol"></option>
+                                    <option value="@rol">@rol</option>
                                 }
-                            </datalist>
+                            </select>
                             <span asp-validation-for="Rol" class="text-danger"></span>
                             <div class="form-text">Rol que cumplirá el empleado para este cliente</div>
                         </div>

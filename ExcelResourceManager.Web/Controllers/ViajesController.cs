@@ -33,11 +33,16 @@ public class ViajesController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? empleadoId)
     {
         try
         {
-            var viajes = await _viajeService.ObtenerTodosAsync();
+            IEnumerable<Viaje> viajes;
+            if (empleadoId.HasValue)
+                viajes = await _unitOfWork.Viajes.FindAsync(v => v.EmpleadoId == empleadoId.Value);
+            else
+                viajes = await _viajeService.ObtenerTodosAsync();
+
             var empleados = await _empleadoService.ObtenerTodosAsync();
             var clientes = await _clienteService.ObtenerTodosAsync();
             var ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
@@ -66,7 +71,8 @@ public class ViajesController : Controller
                     Observaciones = v.Observaciones
                 };
             }).ToList();
-            
+
+            ViewBag.EmpleadoId = empleadoId;
             return View(viajesViewModel);
         }
         catch (Exception ex)
@@ -77,14 +83,20 @@ public class ViajesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? empleadoId)
     {
         try
         {
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
-            return View();
+            ViewBag.EmpleadoId = empleadoId;
+
+            var viaje = new Viaje();
+            if (empleadoId.HasValue)
+                viaje.EmpleadoId = empleadoId.Value;
+
+            return View(viaje);
         }
         catch (Exception ex)
         {
@@ -95,7 +107,7 @@ public class ViajesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Viaje viaje)
+    public async Task<IActionResult> Create(Viaje viaje, int? empleadoId)
     {
         try
         {
@@ -116,6 +128,9 @@ public class ViajesController : Controller
                 {
                     TempData["Success"] = "Viaje creado exitosamente";
                 }
+
+                if (empleadoId.HasValue)
+                    return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
                 
                 return RedirectToAction(nameof(Index));
             }
@@ -123,6 +138,7 @@ public class ViajesController : Controller
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
+            ViewBag.EmpleadoId = empleadoId;
             return View(viaje);
         }
         catch (Exception ex)
@@ -132,6 +148,7 @@ public class ViajesController : Controller
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
+            ViewBag.EmpleadoId = empleadoId;
             return View(viaje);
         }
     }
@@ -196,12 +213,16 @@ public class ViajesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, int? empleadoId)
     {
         try
         {
             await _viajeService.EliminarAsync(id);
             TempData["Success"] = "Viaje eliminado exitosamente";
+
+            if (empleadoId.HasValue)
+                return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
