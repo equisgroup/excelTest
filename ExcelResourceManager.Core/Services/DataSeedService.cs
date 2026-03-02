@@ -38,6 +38,7 @@ public class DataSeedService : IDataSeedService
             await SeedVacacionesAsync();
             await SeedViajesAsync();
             await SeedTurnosSoporteAsync();
+            await SeedConflictosAsync();
             
             await _feriadoService.CargarFeriadosAñoAsync(2026);
 
@@ -225,21 +226,49 @@ public class DataSeedService : IDataSeedService
         var vacaciones = new List<Vacacion>
         {
             // Juan (id=1) - conflicto con viaje
-            new() { Id = 1, EmpleadoId = 1, FechaInicio = new DateTime(2026, 3, 15), FechaFin = new DateTime(2026, 3, 20), Estado = EstadoVacacion.Aprobada, DiasHabiles = 4, TieneConflictos = true, Observaciones = "Conflicto con viaje del 18-20 de marzo" },
+            new() { Id = 1, EmpleadoId = 1, FechaInicio = new DateTime(2026, 3, 15), FechaFin = new DateTime(2026, 3, 20), Estado = EstadoVacacion.Aprobada, Observaciones = "Conflicto con viaje del 18-20 de marzo" },
             
             // María (id=2) - conflicto con turno soporte
-            new() { Id = 2, EmpleadoId = 2, FechaInicio = new DateTime(2026, 3, 20), FechaFin = new DateTime(2026, 3, 25), Estado = EstadoVacacion.Aprobada, DiasHabiles = 4, TieneConflictos = true, Observaciones = "Conflicto con turno de soporte del 17-23 de marzo" },
+            new() { Id = 2, EmpleadoId = 2, FechaInicio = new DateTime(2026, 3, 20), FechaFin = new DateTime(2026, 3, 25), Estado = EstadoVacacion.Aprobada, Observaciones = "Conflicto con turno de soporte del 17-23 de marzo" },
             
             // Carlos (id=3) - conflicto con viaje a Quito
-            new() { Id = 3, EmpleadoId = 3, FechaInicio = new DateTime(2026, 4, 10), FechaFin = new DateTime(2026, 4, 15), Estado = EstadoVacacion.Aprobada, DiasHabiles = 4, TieneConflictos = true, Observaciones = "Conflicto con viaje a Quito del 12-16 de abril" },
+            new() { Id = 3, EmpleadoId = 3, FechaInicio = new DateTime(2026, 4, 10), FechaFin = new DateTime(2026, 4, 15), Estado = EstadoVacacion.Aprobada, Observaciones = "Conflicto con viaje a Quito del 12-16 de abril" },
             
             // Carlos (id=3) - conflicto con viaje a Quito
-            new() { Id = 4, EmpleadoId = 3, FechaInicio = new DateTime(2026, 4, 10), FechaFin = new DateTime(2026, 4, 20), Estado = EstadoVacacion.Aprobada, DiasHabiles = 4, TieneConflictos = true, Observaciones = "Conflicto con viaje a Quito del 12-16 de abril" },
+            new() { Id = 4, EmpleadoId = 3, FechaInicio = new DateTime(2026, 4, 10), FechaFin = new DateTime(2026, 4, 20), Estado = EstadoVacacion.Aprobada, Observaciones = "Conflicto con viaje a Quito del 12-16 de abril" },
         };
 
         foreach (var vacacion in vacaciones)
         {
             await _unitOfWork.Vacaciones.InsertAsync(vacacion);
+        }
+    }
+
+    private async Task SeedConflictosAsync()
+    {
+        var conflictos = new List<Conflicto>
+        {
+            new() { EmpleadoId = 1, Tipo = TipoConflicto.VacacionVsViaje, Nivel = NivelConflicto.Critico,
+                    FechaConflicto = new DateTime(2026, 3, 15), VacacionId = 1, ViajeId = 1,
+                    Descripcion = "Vacación se solapa con viaje programado del 18/03/2026 al 20/03/2026",
+                    Recomendacion = "Cancelar o reprogramar el viaje o la vacación" },
+            new() { EmpleadoId = 2, Tipo = TipoConflicto.VacacionVsSoporte, Nivel = NivelConflicto.Critico,
+                    FechaConflicto = new DateTime(2026, 3, 20), VacacionId = 2, TurnoSoporteId = 1,
+                    Descripcion = "Vacación se solapa con turno de soporte del 17/03/2026 al 23/03/2026",
+                    Recomendacion = "Reasignar el turno de soporte a otro empleado" },
+            new() { EmpleadoId = 3, Tipo = TipoConflicto.VacacionVsViaje, Nivel = NivelConflicto.Critico,
+                    FechaConflicto = new DateTime(2026, 4, 10), VacacionId = 3, ViajeId = 2,
+                    Descripcion = "Vacación se solapa con viaje programado del 12/04/2026 al 16/04/2026",
+                    Recomendacion = "Cancelar o reprogramar el viaje o la vacación" },
+            new() { EmpleadoId = 3, Tipo = TipoConflicto.VacacionVsViaje, Nivel = NivelConflicto.Critico,
+                    FechaConflicto = new DateTime(2026, 4, 10), VacacionId = 4, ViajeId = 2,
+                    Descripcion = "Vacación se solapa con viaje programado del 12/04/2026 al 16/04/2026",
+                    Recomendacion = "Cancelar o reprogramar el viaje o la vacación" },
+        };
+
+        foreach (var conflicto in conflictos)
+        {
+            await _unitOfWork.Conflictos.InsertAsync(conflicto);
         }
     }
 
