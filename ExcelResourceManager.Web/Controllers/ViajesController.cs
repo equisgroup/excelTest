@@ -154,7 +154,7 @@ public class ViajesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, int? empleadoId)
     {
         try
         {
@@ -168,6 +168,7 @@ public class ViajesController : Controller
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
+            ViewBag.EmpleadoId = empleadoId;
             return View(viaje);
         }
         catch (Exception ex)
@@ -179,7 +180,7 @@ public class ViajesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Viaje viaje)
+    public async Task<IActionResult> Edit(int id, Viaje viaje, int? empleadoId)
     {
         try
         {
@@ -192,12 +193,17 @@ public class ViajesController : Controller
             {
                 await _viajeService.ActualizarAsync(viaje);
                 TempData["Success"] = "Viaje actualizado exitosamente";
+
+                if (empleadoId.HasValue)
+                    return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
                 return RedirectToAction(nameof(Index));
             }
             
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
+            ViewBag.EmpleadoId = empleadoId;
             return View(viaje);
         }
         catch (Exception ex)
@@ -207,6 +213,7 @@ public class ViajesController : Controller
             ViewBag.Empleados = new SelectList(await _empleadoService.ObtenerActivosAsync(), "Id", "NombreCompleto");
             ViewBag.Clientes = new SelectList(await _clienteService.ObtenerActivosAsync(), "Id", "Nombre");
             ViewBag.Ubicaciones = new SelectList(await _unitOfWork.Ubicaciones.GetAllAsync(), "Id", "Ciudad");
+            ViewBag.EmpleadoId = empleadoId;
             return View(viaje);
         }
     }
