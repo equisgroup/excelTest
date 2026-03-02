@@ -1,0 +1,234 @@
+@model ExcelResourceManager.Web.Models.ClienteDetailsViewModel
+
+@{
+    ViewData["Title"] = $"Detalles - {Model.Cliente.Nombre}";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-building me-2"></i>@Model.Cliente.Nombre</h2>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Cliente.Id" class="btn btn-warning me-2">
+                <i class="bi bi-pencil me-1"></i>Editar Cliente
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información del Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Código Interno</dt>
+                        <dd class="col-sm-8">@Model.Cliente.CodigoInterno</dd>
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@Model.Cliente.Email</dd>
+                        <dt class="col-sm-4">Contrato Inicio</dt>
+                        <dd class="col-sm-8">@(Model.Cliente.FechaContratoInicio?.ToString("dd/MM/yyyy") ?? "-")</dd>
+                        <dt class="col-sm-4">Contrato Fin</dt>
+                        <dd class="col-sm-8">@(Model.Cliente.FechaContratoFin?.ToString("dd/MM/yyyy") ?? "-")</dd>
+                        <dt class="col-sm-4">Estado</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Cliente.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactivo</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Resumen</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="text-primary">@Model.Roles.Count</h3>
+                            <p class="text-muted mb-0">Roles definidos</p>
+                        </div>
+                        <div class="col-6">
+                            <h3 class="text-success">@Model.Asignaciones.Count(a => a.Activa)</h3>
+                            <p class="text-muted mb-0">Asignaciones activas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Roles del Cliente -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Roles Requeridos</h5>
+            <a asp-controller="RolesCliente" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="btn btn-sm btn-light">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Rol
+            </a>
+        </div>
+        <div class="card-body">
+            @if (!Model.Roles.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>No hay roles definidos para este cliente.
+                    <a asp-controller="RolesCliente" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id" class="alert-link">Agregar el primero</a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Rol</th>
+                                <th>Cantidad Requerida</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Asignados</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rol in Model.Roles)
+                            {
+                                var asignados = Model.Asignaciones.Count(a => a.Rol == rol.Rol && a.Activa);
+                                var cobertura = asignados >= rol.CantidadRequerida ? "bg-success" : (asignados > 0 ? "bg-warning" : "bg-danger");
+                                <tr>
+                                    <td><span class="badge bg-primary">@rol.Rol</span></td>
+                                    <td>@rol.CantidadRequerida</td>
+                                    <td>@rol.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                    <td>@(rol.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>
+                                        <span class="badge @cobertura">@asignados / @rol.CantidadRequerida</span>
+                                    </td>
+                                    <td>
+                                        <a asp-controller="AsignacionesCliente" asp-action="Create"
+                                           asp-route-clienteId="@Model.Cliente.Id" asp-route-rol="@rol.Rol"
+                                           class="btn btn-sm btn-outline-success" title="Asignar Empleado">
+                                            <i class="bi bi-person-plus"></i>
+                                        </a>
+                                        <a asp-controller="RolesCliente" asp-action="Edit" asp-route-id="@rol.Id"
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-controller="RolesCliente" asp-action="Delete" asp-route-id="@rol.Id"
+                                              method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de eliminar este rol?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="clienteId" value="@Model.Cliente.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Asignaciones de Empleados -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Empleados Asignados</h5>
+            <a asp-controller="AsignacionesCliente" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id"
+               class="btn btn-sm btn-light">
+                <i class="bi bi-plus-circle me-1"></i>Nueva Asignación
+            </a>
+        </div>
+        <div class="card-body">
+            @if (!Model.Asignaciones.Any())
+            {
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>No hay empleados asignados a este cliente.
+                    <a asp-controller="AsignacionesCliente" asp-action="Create" asp-route-clienteId="@Model.Cliente.Id"
+                       class="alert-link">Crear la primera asignación</a>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Rol</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>% Asignación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var asignacion in Model.Asignaciones)
+                            {
+                                <tr>
+                                    <td>@asignacion.EmpleadoNombre</td>
+                                    <td><span class="badge bg-primary">@asignacion.Rol</span></td>
+                                    <td>@asignacion.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                    <td>@(asignacion.FechaFin?.ToString("dd/MM/yyyy") ?? "Todo el contrato")</td>
+                                    <td>@asignacion.PorcentajeAsignacion%</td>
+                                    <td>
+                                        @if (asignacion.Activa)
+                                        {
+                                            <span class="badge bg-success">Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-controller="AsignacionesCliente" asp-action="Edit" asp-route-id="@asignacion.Id"
+                                           class="btn btn-sm btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-controller="AsignacionesCliente" asp-action="Delete"
+                                              asp-route-id="@asignacion.Id" method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de eliminar esta asignación?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="clienteId" value="@Model.Cliente.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

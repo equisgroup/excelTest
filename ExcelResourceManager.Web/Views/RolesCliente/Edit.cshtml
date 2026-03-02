@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Editar Rol de Cliente";
     var clientes = ViewBag.Clientes as List<ExcelResourceManager.Core.Models.Cliente> ?? new List<ExcelResourceManager.Core.Models.Cliente>();
+    var roles = ViewBag.Roles as List<string> ?? new List<string>();
 }
 
 <div class="container">
@@ -31,7 +32,13 @@
 
                         <div class="mb-3">
                             <label asp-for="Rol" class="form-label">Rol</label>
-                            <input asp-for="Rol" class="form-control" placeholder="Ej: Desarrollador Backend" required />
+                            <select asp-for="Rol" class="form-select" required>
+                                <option value="">-- Seleccione un rol --</option>
+                                @foreach (var rol in roles)
+                                {
+                                    <option value="@rol">@rol</option>
+                                }
+                            </select>
                             <span asp-validation-for="Rol" class="text-danger"></span>
                         </div>
 
@@ -55,7 +62,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                            <a asp-controller="Clientes" asp-action="Details" asp-route-id="@Model.ClienteId" class="btn btn-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-primary">Actualizar Rol</button>
                         </div>
                     </form>

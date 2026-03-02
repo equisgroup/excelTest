@@ -28,11 +28,16 @@ public class VacacionesController : Controller
         _logger = logger;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? empleadoId)
     {
         try
         {
-            var vacaciones = await _vacacionService.ObtenerTodasAsync();
+            IEnumerable<Vacacion> vacaciones;
+            if (empleadoId.HasValue)
+                vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => v.EmpleadoId == empleadoId.Value);
+            else
+                vacaciones = await _vacacionService.ObtenerTodasAsync();
+
             var empleados = await _empleadoService.ObtenerTodosAsync();
             
             // Crear ViewModels con información del empleado
@@ -55,6 +60,7 @@ public class VacacionesController : Controller
             }).ToList();
             
             ViewBag.Empleados = await _empleadoService.ObtenerActivosAsync();
+            ViewBag.EmpleadoId = empleadoId;
             return View(vacacionesViewModel);
         }
         catch (Exception ex)
@@ -66,7 +72,7 @@ public class VacacionesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Vacacion vacacion)
+    public async Task<IActionResult> Create(Vacacion vacacion, int? empleadoId)
     {
         try
         {
@@ -89,6 +95,9 @@ public class VacacionesController : Controller
                 {
                     TempData["Success"] = "Vacación creada exitosamente";
                 }
+
+                if (empleadoId.HasValue)
+                    return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
                 
                 return RedirectToAction(nameof(Index));
             }
@@ -98,11 +107,15 @@ public class VacacionesController : Controller
             _logger.LogError(ex, "Error al crear vacación");
             TempData["Error"] = "Error al crear la vacación";
         }
+
+        if (empleadoId.HasValue)
+            return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, int? empleadoId)
     {
         try
         {
@@ -114,11 +127,15 @@ public class VacacionesController : Controller
             _logger.LogError(ex, $"Error al eliminar vacación {id}");
             TempData["Error"] = "Error al eliminar la vacación";
         }
+
+        if (empleadoId.HasValue)
+            return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Aprobar(int id)
+    public async Task<IActionResult> Aprobar(int id, int? empleadoId)
     {
         try
         {
@@ -139,11 +156,15 @@ public class VacacionesController : Controller
             _logger.LogError(ex, $"Error al aprobar vacación {id}");
             TempData["Error"] = "Error al aprobar la vacación";
         }
+
+        if (empleadoId.HasValue)
+            return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Rechazar(int id)
+    public async Task<IActionResult> Rechazar(int id, int? empleadoId)
     {
         try
         {
@@ -164,6 +185,10 @@ public class VacacionesController : Controller
             _logger.LogError(ex, $"Error al rechazar vacación {id}");
             TempData["Error"] = "Error al rechazar la vacación";
         }
+
+        if (empleadoId.HasValue)
+            return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
+
         return RedirectToAction(nameof(Index));
     }
 }

@@ -69,6 +69,11 @@ if (isTestMode)
         await dataSeedService.SeedTestDataAsync();
         Log.Information("Test data seeded successfully");
     }
+    else
+    {
+        var dataSeedService = scope.ServiceProvider.GetRequiredService<IDataSeedService>();
+        await dataSeedService.EnsureRolesSeedAsync();
+    }
 }
 
 // Configure the HTTP request pipeline.

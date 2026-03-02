@@ -55,6 +55,7 @@
 
                     <form asp-action="Edit" method="post">
                         <input type="hidden" asp-for="Id" />
+                        <input type="hidden" name="empleadoId" value="@ViewBag.EmpleadoId" />
 
                         <div class="mb-3">
                             <label asp-for="EmpleadoId" class="form-label">Empleado</label>
@@ -110,9 +111,18 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a asp-action="Index" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
-                            </a>
+                            @if ((ViewBag.EmpleadoId as int?) != null)
+                            {
+                                <a asp-controller="Empleados" asp-action="Details" asp-route-id="@ViewBag.EmpleadoId" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Cancelar
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left"></i> Cancelar
+                                </a>
+                            }
                             <button type="submit" class="btn btn-success">
                                 <i class="bi bi-save"></i> Actualizar Viaje
                             </button>

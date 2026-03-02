@@ -26,9 +26,11 @@ public class DataSeedService : IDataSeedService
             if (ubicacionesExistentes.Any())
             {
                 Log.Information("Los datos de prueba ya existen. Omitiendo la carga.");
+                await EnsureRolesSeedAsync();
                 return;
             }
 
+            await SeedRolesAsync();
             await SeedUbicacionesAsync();
             await SeedClientesAsync();
             await SeedEmpleadosAsync();
@@ -60,9 +62,11 @@ public class DataSeedService : IDataSeedService
             if (ubicacionesExistentes.Any())
             {
                 Log.Information("Los datos de producción ya existen. Omitiendo la carga.");
+                await EnsureRolesSeedAsync();
                 return;
             }
 
+            await SeedRolesAsync();
             await SeedUbicacionesAsync();
             await _feriadoService.CargarFeriadosAñoAsync(2026);
 
@@ -254,6 +258,42 @@ public class DataSeedService : IDataSeedService
         foreach (var viaje in viajes)
         {
             await _unitOfWork.Viajes.InsertAsync(viaje);
+        }
+    }
+
+    public async Task EnsureRolesSeedAsync()
+    {
+        var existentes = await _unitOfWork.Roles.GetAllAsync();
+        if (!existentes.Any())
+        {
+            Log.Information("Seeding roles iniciales...");
+            await SeedRolesAsync();
+            await _unitOfWork.CommitAsync();
+        }
+    }
+
+    private async Task SeedRolesAsync()
+    {
+        var roles = new List<Rol>
+        {
+            new() { Nombre = "Analista", Activo = true },
+            new() { Nombre = "Arquitecto", Activo = true },
+            new() { Nombre = "Consultor", Activo = true },
+            new() { Nombre = "DevOps", Activo = true },
+            new() { Nombre = "Desarrollador", Activo = true },
+            new() { Nombre = "Desarrollador Backend", Activo = true },
+            new() { Nombre = "Desarrollador Frontend", Activo = true },
+            new() { Nombre = "Desarrollador Full Stack", Activo = true },
+            new() { Nombre = "Gerente de Proyecto", Activo = true },
+            new() { Nombre = "Líder Técnico", Activo = true },
+            new() { Nombre = "QA", Activo = true },
+            new() { Nombre = "Scrum Master", Activo = true },
+            new() { Nombre = "UX/UI Designer", Activo = true },
+        };
+
+        foreach (var rol in roles)
+        {
+            await _unitOfWork.Roles.InsertAsync(rol);
         }
     }
 

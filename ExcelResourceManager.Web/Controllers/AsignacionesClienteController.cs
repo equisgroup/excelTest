@@ -61,6 +61,8 @@ public class AsignacionesClienteController : Controller
         ViewBag.Empleados = empleados.ToList();
         ViewBag.Clientes = clientes.ToList();
         ViewBag.RolesCliente = rolesCliente.ToList();
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+        ViewBag.ClienteId = clienteId;
 
         var asignacion = new AsignacionCliente
         {
@@ -79,7 +81,7 @@ public class AsignacionesClienteController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(AsignacionCliente asignacion)
+    public async Task<IActionResult> Create(AsignacionCliente asignacion, int? clienteId)
     {
         if (!ModelState.IsValid)
         {
@@ -90,6 +92,8 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+            ViewBag.ClienteId = clienteId;
             return View(asignacion);
         }
 
@@ -100,6 +104,10 @@ public class AsignacionesClienteController : Controller
             await _unitOfWork.CommitAsync();
 
             TempData["Success"] = "Asignación creada exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = clienteId.Value });
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
@@ -114,6 +122,8 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+            ViewBag.ClienteId = clienteId;
             return View(asignacion);
         }
     }
@@ -131,13 +141,14 @@ public class AsignacionesClienteController : Controller
         ViewBag.Empleados = empleados.ToList();
         ViewBag.Clientes = clientes.ToList();
         ViewBag.RolesCliente = rolesCliente.ToList();
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
 
         return View(asignacion);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, AsignacionCliente asignacion)
+    public async Task<IActionResult> Edit(int id, AsignacionCliente asignacion, int? clienteId)
     {
         if (id != asignacion.Id)
             return NotFound();
@@ -151,6 +162,7 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(asignacion);
         }
 
@@ -160,6 +172,10 @@ public class AsignacionesClienteController : Controller
             await _unitOfWork.CommitAsync();
 
             TempData["Success"] = "Asignación actualizada exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = clienteId.Value });
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
@@ -174,13 +190,14 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(asignacion);
         }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, int? clienteId)
     {
         try
         {
@@ -188,10 +205,15 @@ public class AsignacionesClienteController : Controller
             if (asignacion == null)
                 return NotFound();
 
+            var cid = clienteId ?? asignacion.ClienteId;
+
             await _unitOfWork.AsignacionesCliente.DeleteAsync(id);
             await _unitOfWork.CommitAsync();
 
             TempData["Success"] = "Asignación eliminada exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = cid });
         }
         catch (Exception ex)
         {

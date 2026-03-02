@@ -40,21 +40,30 @@ public class RolesClienteController : Controller
         return View(viewModels);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? clienteId)
     {
         var clientes = await _unitOfWork.Clientes.GetAllAsync();
         ViewBag.Clientes = clientes.ToList();
-        return View();
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+        ViewBag.ClienteId = clienteId;
+
+        var rolCliente = new RolCliente();
+        if (clienteId.HasValue)
+            rolCliente.ClienteId = clienteId.Value;
+
+        return View(rolCliente);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(RolCliente rolCliente)
+    public async Task<IActionResult> Create(RolCliente rolCliente, int? clienteId)
     {
         if (!ModelState.IsValid)
         {
             var clientes = await _unitOfWork.Clientes.GetAllAsync();
             ViewBag.Clientes = clientes.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+            ViewBag.ClienteId = clienteId;
             return View(rolCliente);
         }
 
@@ -64,6 +73,10 @@ public class RolesClienteController : Controller
             await _unitOfWork.CommitAsync();
             
             TempData["Success"] = "Rol del cliente creado exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = clienteId.Value });
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
@@ -73,6 +86,8 @@ public class RolesClienteController : Controller
             
             var clientes = await _unitOfWork.Clientes.GetAllAsync();
             ViewBag.Clientes = clientes.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
+            ViewBag.ClienteId = clienteId;
             return View(rolCliente);
         }
     }
@@ -87,12 +102,13 @@ public class RolesClienteController : Controller
 
         var clientes = await _unitOfWork.Clientes.GetAllAsync();
         ViewBag.Clientes = clientes.ToList();
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View(rolCliente);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, RolCliente rolCliente)
+    public async Task<IActionResult> Edit(int id, RolCliente rolCliente, int? clienteId)
     {
         if (id != rolCliente.Id)
         {
@@ -103,6 +119,7 @@ public class RolesClienteController : Controller
         {
             var clientes = await _unitOfWork.Clientes.GetAllAsync();
             ViewBag.Clientes = clientes.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(rolCliente);
         }
 
@@ -112,6 +129,10 @@ public class RolesClienteController : Controller
             await _unitOfWork.CommitAsync();
             
             TempData["Success"] = "Rol del cliente actualizado exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = clienteId.Value });
+
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
@@ -121,13 +142,14 @@ public class RolesClienteController : Controller
             
             var clientes = await _unitOfWork.Clientes.GetAllAsync();
             ViewBag.Clientes = clientes.ToList();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(rolCliente);
         }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, int? clienteId)
     {
         try
         {
@@ -137,10 +159,15 @@ public class RolesClienteController : Controller
                 return NotFound();
             }
 
+            var cid = clienteId ?? rolCliente.ClienteId;
+
             await _unitOfWork.RolesCliente.DeleteAsync(id);
             await _unitOfWork.CommitAsync();
             
             TempData["Success"] = "Rol del cliente eliminado exitosamente";
+
+            if (clienteId.HasValue)
+                return RedirectToAction("Details", "Clientes", new { id = cid });
         }
         catch (Exception ex)
         {

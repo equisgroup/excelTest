@@ -6,6 +6,7 @@ namespace ExcelResourceManager.Data.Repositories;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly LiteDbContext _context;
+    private IRepository<Rol>? _roles;
     private IRepository<Ubicacion>? _ubicaciones;
     private IRepository<Cliente>? _clientes;
     private IRepository<Empleado>? _empleados;
@@ -21,6 +22,9 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
     }
+    
+    public IRepository<Rol> Roles =>
+        _roles ??= new Repository<Rol>(_context);
     
     public IRepository<Ubicacion> Ubicaciones => 
         _ubicaciones ??= new Repository<Ubicacion>(_context);

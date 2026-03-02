@@ -1,5 +1,7 @@
 using ExcelResourceManager.Core.Services;
 using ExcelResourceManager.Core.Models;
+using ExcelResourceManager.Core.Repositories;
+using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExcelResourceManager.Web.Controllers;
@@ -7,12 +9,75 @@ namespace ExcelResourceManager.Web.Controllers;
 public class EmpleadosController : Controller
 {
     private readonly IEmpleadoService _empleadoService;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<EmpleadosController> _logger;
 
-    public EmpleadosController(IEmpleadoService empleadoService, ILogger<EmpleadosController> logger)
+    public EmpleadosController(IEmpleadoService empleadoService, IUnitOfWork unitOfWork, ILogger<EmpleadosController> logger)
     {
         _empleadoService = empleadoService;
+        _unitOfWork = unitOfWork;
         _logger = logger;
+    }
+
+    public async Task<IActionResult> Details(int id)
+    {
+        try
+        {
+            var empleado = await _empleadoService.ObtenerPorIdAsync(id);
+            if (empleado == null)
+                return NotFound();
+
+            var vacaciones = await _unitOfWork.Vacaciones.FindAsync(v => v.EmpleadoId == id);
+            var viajes = await _unitOfWork.Viajes.FindAsync(v => v.EmpleadoId == id);
+            var clientes = await _unitOfWork.Clientes.GetAllAsync();
+            var ubicaciones = await _unitOfWork.Ubicaciones.GetAllAsync();
+
+            var viewModel = new EmpleadoDetailsViewModel
+            {
+                Empleado = empleado,
+                Vacaciones = vacaciones.Select(v => new VacacionViewModel
+                {
+                    Id = v.Id,
+                    EmpleadoId = v.EmpleadoId,
+                    EmpleadoNombre = empleado.NombreCompleto,
+                    EmpleadoEmail = empleado.Email,
+                    FechaInicio = v.FechaInicio,
+                    FechaFin = v.FechaFin,
+                    Estado = v.Estado,
+                    DiasHabiles = v.DiasHabiles,
+                    TieneConflictos = v.TieneConflictos,
+                    Observaciones = v.Observaciones
+                }).ToList(),
+                Viajes = viajes.Select(v =>
+                {
+                    var cliente = clientes.FirstOrDefault(c => c.Id == v.ClienteDestinoId);
+                    var ubicacion = ubicaciones.FirstOrDefault(u => u.Id == v.UbicacionDestinoId);
+                    return new ViajeViewModel
+                    {
+                        Id = v.Id,
+                        EmpleadoId = v.EmpleadoId,
+                        EmpleadoNombre = empleado.NombreCompleto,
+                        EmpleadoEmail = empleado.Email,
+                        ClienteDestinoId = v.ClienteDestinoId,
+                        ClienteNombre = cliente?.Nombre ?? "Desconocido",
+                        UbicacionDestinoId = v.UbicacionDestinoId,
+                        UbicacionNombre = ubicacion?.Ciudad ?? "Desconocido",
+                        FechaInicio = v.FechaInicio,
+                        FechaFin = v.FechaFin,
+                        Estado = v.Estado,
+                        TieneConflictos = v.TieneConflictos,
+                        Observaciones = v.Observaciones
+                    };
+                }).ToList()
+            };
+
+            return View(viewModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cargar detalles del empleado {EmpleadoId}", id);
+            return NotFound();
+        }
     }
 
     public async Task<IActionResult> Index()
@@ -29,8 +94,9 @@ public class EmpleadosController : Controller
         }
     }
 
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View();
     }
 
@@ -54,6 +120,7 @@ public class EmpleadosController : Controller
             _logger.LogError(ex, "Error al crear empleado");
             ModelState.AddModelError("", "Error al crear el empleado");
         }
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View(empleado);
     }
 
@@ -64,6 +131,7 @@ public class EmpleadosController : Controller
             var empleado = await _empleadoService.ObtenerPorIdAsync(id);
             if (empleado == null)
                 return NotFound();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(empleado);
         }
         catch (Exception ex)
@@ -94,6 +162,7 @@ public class EmpleadosController : Controller
             _logger.LogError(ex, $"Error al actualizar empleado {id}");
             ModelState.AddModelError("", "Error al actualizar el empleado");
         }
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View(empleado);
     }
 
