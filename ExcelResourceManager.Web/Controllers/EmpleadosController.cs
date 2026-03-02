@@ -94,8 +94,9 @@ public class EmpleadosController : Controller
         }
     }
 
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View();
     }
 
@@ -119,6 +120,7 @@ public class EmpleadosController : Controller
             _logger.LogError(ex, "Error al crear empleado");
             ModelState.AddModelError("", "Error al crear el empleado");
         }
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View(empleado);
     }
 
@@ -129,6 +131,7 @@ public class EmpleadosController : Controller
             var empleado = await _empleadoService.ObtenerPorIdAsync(id);
             if (empleado == null)
                 return NotFound();
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(empleado);
         }
         catch (Exception ex)
@@ -159,6 +162,7 @@ public class EmpleadosController : Controller
             _logger.LogError(ex, $"Error al actualizar empleado {id}");
             ModelState.AddModelError("", "Error al actualizar el empleado");
         }
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         return View(empleado);
     }
 

@@ -1,6 +1,5 @@
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Repositories;
-using ExcelResourceManager.Web.Helpers;
 using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -62,7 +61,7 @@ public class AsignacionesClienteController : Controller
         ViewBag.Empleados = empleados.ToList();
         ViewBag.Clientes = clientes.ToList();
         ViewBag.RolesCliente = rolesCliente.ToList();
-        ViewBag.Roles = RolesDisponibles.Roles;
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
         ViewBag.ClienteId = clienteId;
 
         var asignacion = new AsignacionCliente
@@ -93,7 +92,7 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
-            ViewBag.Roles = RolesDisponibles.Roles;
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             ViewBag.ClienteId = clienteId;
             return View(asignacion);
         }
@@ -123,7 +122,7 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
-            ViewBag.Roles = RolesDisponibles.Roles;
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             ViewBag.ClienteId = clienteId;
             return View(asignacion);
         }
@@ -142,7 +141,7 @@ public class AsignacionesClienteController : Controller
         ViewBag.Empleados = empleados.ToList();
         ViewBag.Clientes = clientes.ToList();
         ViewBag.RolesCliente = rolesCliente.ToList();
-        ViewBag.Roles = RolesDisponibles.Roles;
+        ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
 
         return View(asignacion);
     }
@@ -163,7 +162,7 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
-            ViewBag.Roles = RolesDisponibles.Roles;
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(asignacion);
         }
 
@@ -191,7 +190,7 @@ public class AsignacionesClienteController : Controller
             ViewBag.Empleados = empleados.ToList();
             ViewBag.Clientes = clientes.ToList();
             ViewBag.RolesCliente = rolesCliente.ToList();
-            ViewBag.Roles = RolesDisponibles.Roles;
+            ViewBag.Roles = (await _unitOfWork.Roles.FindAsync(r => r.Activo)).Select(r => r.Nombre).OrderBy(n => n).ToList();
             return View(asignacion);
         }
     }

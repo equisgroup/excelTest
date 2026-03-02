@@ -47,7 +47,7 @@
                                 <label asp-for="Rol" class="form-label">Rol</label>
                                 <select asp-for="Rol" class="form-select" required>
                                     <option value="">-- Seleccione un rol --</option>
-                                    @foreach (var rol in ExcelResourceManager.Web.Helpers.RolesDisponibles.Roles)
+                                    @foreach (var rol in (ViewBag.Roles as List<string> ?? new List<string>()))
                                     {
                                         <option value="@rol">@rol</option>
                                     }

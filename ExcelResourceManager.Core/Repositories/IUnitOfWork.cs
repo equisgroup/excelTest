@@ -4,6 +4,7 @@ namespace ExcelResourceManager.Core.Repositories;
 
 public interface IUnitOfWork : IDisposable
 {
+    IRepository<Rol> Roles { get; }
     IRepository<Ubicacion> Ubicaciones { get; }
     IRepository<Cliente> Clientes { get; }
     IRepository<Empleado> Empleados { get; }
