@@ -22,12 +22,12 @@ public class Repository<T> : IRepository<T> where T : class
     
     public Task<IEnumerable<T>> GetAllAsync()
     {
-        return Task.FromResult(_collection.FindAll().AsEnumerable());
+        return Task.FromResult<IEnumerable<T>>(_collection.FindAll().ToList());
     }
     
     public Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
-        return Task.FromResult(_collection.Find(predicate).AsEnumerable());
+        return Task.FromResult<IEnumerable<T>>(_collection.Find(predicate).ToList());
     }
     
     public Task<int> InsertAsync(T entity)
