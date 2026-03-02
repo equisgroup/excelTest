@@ -1,0 +1,100 @@
+@model ExcelResourceManager.Core.Models.AsignacionCliente
+
+@{
+    ViewData["Title"] = "Editar Asignación de Empleado";
+    var empleados = ViewBag.Empleados as List<ExcelResourceManager.Core.Models.Empleado> ?? new List<ExcelResourceManager.Core.Models.Empleado>();
+    var clientes = ViewBag.Clientes as List<ExcelResourceManager.Core.Models.Cliente> ?? new List<ExcelResourceManager.Core.Models.Cliente>();
+    var rolesCliente = ViewBag.RolesCliente as List<ExcelResourceManager.Core.Models.RolCliente> ?? new List<ExcelResourceManager.Core.Models.RolCliente>();
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">@ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <input asp-for="Id" type="hidden" />
+
+                        <div class="mb-3">
+                            <label asp-for="ClienteId" class="form-label">Cliente</label>
+                            <select asp-for="ClienteId" class="form-select" required>
+                                <option value="">-- Seleccione un cliente --</option>
+                                @foreach (var cliente in clientes)
+                                {
+                                    <option value="@cliente.Id">@cliente.Nombre</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ClienteId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Rol" class="form-label">Rol</label>
+                            <input asp-for="Rol" class="form-control" list="rolesSugeridos" placeholder="Ej: Desarrollador, QA, Analista" required />
+                            <datalist id="rolesSugeridos">
+                                @foreach (var rol in rolesCliente.Select(r => r.Rol).Distinct())
+                                {
+                                    <option value="@rol"></option>
+                                }
+                            </datalist>
+                            <span asp-validation-for="Rol" class="text-danger"></span>
+                            <div class="form-text">Rol que cumplirá el empleado para este cliente</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="EmpleadoId" class="form-label">Empleado</label>
+                            <select asp-for="EmpleadoId" class="form-select" required>
+                                <option value="">-- Seleccione un empleado --</option>
+                                @foreach (var empleado in empleados)
+                                {
+                                    <option value="@empleado.Id">@empleado.NombreCompleto (@empleado.Rol)</option>
+                                }
+                            </select>
+                            <span asp-validation-for="EmpleadoId" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FechaFin" class="form-label">Fecha Fin (Opcional)</label>
+                                <input asp-for="FechaFin" type="date" class="form-control" />
+                                <span asp-validation-for="FechaFin" class="text-danger"></span>
+                                <div class="form-text">Dejar vacío para asignar durante todo el período del contrato</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PorcentajeAsignacion" class="form-label">Porcentaje de Asignación (%)</label>
+                            <input asp-for="PorcentajeAsignacion" type="number" min="1" max="100" step="1" class="form-control" required />
+                            <span asp-validation-for="PorcentajeAsignacion" class="text-danger"></span>
+                            <div class="form-text">Porcentaje del tiempo que el empleado dedicará a este cliente (1-100)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="Activa" class="form-check-input" type="checkbox" />
+                                <label asp-for="Activa" class="form-check-label">Asignación Activa</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
