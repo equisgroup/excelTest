@@ -1,14 +1,14 @@
-@model IEnumerable<ExcelResourceManager.Web.Models.RolClienteViewModel>
+@model IEnumerable<ExcelResourceManager.Web.Models.AsignacionClienteViewModel>
 
 @{
-    ViewData["Title"] = "Roles de Cliente";
+    ViewData["Title"] = "Asignaciones de Empleados a Clientes";
 }
 
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>@ViewData["Title"]</h2>
         <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Rol
+            <i class="bi bi-plus-circle"></i> Nueva Asignación
         </a>
     </div>
 
@@ -32,8 +32,8 @@
             @if (!Model.Any())
             {
                 <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i> No hay roles de cliente definidos. 
-                    <a asp-action="Create" class="alert-link">Crear el primero</a>
+                    <i class="bi bi-info-circle"></i> No hay asignaciones registradas.
+                    <a asp-action="Create" class="alert-link">Crear la primera</a>
                 </div>
             }
             else
@@ -42,11 +42,13 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>Empleado</th>
                                 <th>Cliente</th>
                                 <th>Rol</th>
-                                <th>Cantidad Requerida</th>
                                 <th>Fecha Inicio</th>
                                 <th>Fecha Fin</th>
+                                <th>% Asignación</th>
+                                <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -54,20 +56,28 @@
                             @foreach (var item in Model)
                             {
                                 <tr>
+                                    <td>@item.EmpleadoNombre</td>
                                     <td>@item.ClienteNombre</td>
                                     <td><span class="badge bg-primary">@item.Rol</span></td>
-                                    <td>@item.CantidadRequerida</td>
                                     <td>@item.FechaInicio.ToString("dd/MM/yyyy")</td>
-                                    <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                    <td>@(item.FechaFin?.ToString("dd/MM/yyyy") ?? "Todo el contrato")</td>
+                                    <td>@item.PorcentajeAsignacion%</td>
                                     <td>
-                                        <a asp-controller="AsignacionesCliente" asp-action="Create" asp-route-clienteId="@item.ClienteId" asp-route-rol="@item.Rol" class="btn btn-sm btn-outline-success" title="Asignar Empleado">
-                                            <i class="bi bi-person-plus"></i>
-                                        </a>
+                                        @if (item.Activa)
+                                        {
+                                            <span class="badge bg-success">Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        }
+                                    </td>
+                                    <td>
                                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" 
-                                              onsubmit="return confirm('¿Está seguro de eliminar este rol?');">
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de eliminar esta asignación?');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
                                                 <i class="bi bi-trash"></i>
