@@ -35,6 +35,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Register business services
 builder.Services.AddScoped<IFeriadoService, FeriadoService>();
+builder.Services.AddScoped<IUbicacionService, UbicacionService>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
 builder.Services.AddScoped<IDataSeedService, DataSeedService>();
 builder.Services.AddScoped<IVacacionService, VacacionService>();

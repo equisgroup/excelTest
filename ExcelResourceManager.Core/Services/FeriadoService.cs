@@ -17,6 +17,14 @@ public class FeriadoService : IFeriadoService
     {
         try
         {
+            // Idempotent: skip if holidays for this year already exist
+            var existentes = await _unitOfWork.Feriados.FindAsync(f => f.Año == año);
+            if (existentes.Any())
+            {
+                Log.Information("Los feriados para el año {Año} ya existen. Omitiendo la carga.", año);
+                return;
+            }
+
             if (año == 2026)
             {
                 await CargarFeriados2026Async();
@@ -170,6 +178,89 @@ public class FeriadoService : IFeriadoService
         catch (Exception ex)
         {
             Log.Error(ex, "Error al obtener feriados para ubicación {UbicacionId} y año {Año}", ubicacionId, año);
+            throw;
+        }
+    }
+
+    public async Task<List<Feriado>> ObtenerTodosAsync(int? ubicacionId = null, int? año = null)
+    {
+        try
+        {
+            IEnumerable<Feriado> feriados;
+            if (ubicacionId.HasValue && año.HasValue)
+                feriados = await _unitOfWork.Feriados.FindAsync(f => f.UbicacionId == ubicacionId.Value && f.Año == año.Value);
+            else if (ubicacionId.HasValue)
+                feriados = await _unitOfWork.Feriados.FindAsync(f => f.UbicacionId == ubicacionId.Value);
+            else if (año.HasValue)
+                feriados = await _unitOfWork.Feriados.FindAsync(f => f.Año == año.Value);
+            else
+                feriados = await _unitOfWork.Feriados.GetAllAsync();
+
+            return feriados.OrderBy(f => f.Año).ThenBy(f => f.Fecha).ToList();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al obtener feriados");
+            throw;
+        }
+    }
+
+    public async Task<Feriado?> ObtenerPorIdAsync(int id)
+    {
+        try
+        {
+            return await _unitOfWork.Feriados.GetByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al obtener feriado {Id}", id);
+            throw;
+        }
+    }
+
+    public async Task<int> AgregarFeriadoAsync(Feriado feriado)
+    {
+        try
+        {
+            feriado.Año = feriado.Fecha.Year;
+            var id = await _unitOfWork.Feriados.InsertAsync(feriado);
+            await _unitOfWork.CommitAsync();
+            return id;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al agregar feriado {Nombre}", feriado.Nombre);
+            throw;
+        }
+    }
+
+    public async Task<bool> ActualizarFeriadoAsync(Feriado feriado)
+    {
+        try
+        {
+            feriado.Año = feriado.Fecha.Year;
+            var result = await _unitOfWork.Feriados.UpdateAsync(feriado);
+            await _unitOfWork.CommitAsync();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al actualizar feriado {Id}", feriado.Id);
+            throw;
+        }
+    }
+
+    public async Task<bool> EliminarFeriadoAsync(int id)
+    {
+        try
+        {
+            var result = await _unitOfWork.Feriados.DeleteAsync(id);
+            await _unitOfWork.CommitAsync();
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error al eliminar feriado {Id}", id);
             throw;
         }
     }
