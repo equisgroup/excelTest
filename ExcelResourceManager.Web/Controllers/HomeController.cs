@@ -35,7 +35,7 @@ public class HomeController : Controller
         
         _logger.LogInformation($"Mode toggled from {currentMode} to {newMode}");
         
-        TempData["Success"] = $"Modo cambiado a {newMode}. Por favor, recargue la página para ver los cambios.";
+        TempData["Success"] = $"Modo cambiado a {newMode}.";
         
         return RedirectToAction("Index", "Dashboard");
     }
