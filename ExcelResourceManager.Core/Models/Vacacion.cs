@@ -9,7 +9,9 @@ public class Vacacion
     public DateTime FechaInicio { get; set; }
     public DateTime FechaFin { get; set; }
     public EstadoVacacion Estado { get; set; }
-    public int DiasHabiles { get; set; }
+    public int DiasHabiles => FechaInicio == default || FechaFin == default
+        ? 0
+        : (int)(FechaFin.Date - FechaInicio.Date).TotalDays + 1;
     public bool TieneConflictos { get; set; }
     public string Observaciones { get; set; } = string.Empty;
 }

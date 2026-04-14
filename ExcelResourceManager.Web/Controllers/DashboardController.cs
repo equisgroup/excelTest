@@ -38,7 +38,7 @@ public class DashboardController : Controller
 
             var conflictosNoResueltos = conflictos.Where(c => !c.Resuelto).ToList();
             var fechaHoy = DateTime.Today;
-            var fechaLimite = fechaHoy.AddDays(30);
+            var fechaLimite = fechaHoy.AddDays(90);
 
             var proximasVacaciones = vacaciones
                 .Where(v => v.FechaInicio >= fechaHoy && v.FechaInicio <= fechaLimite)
