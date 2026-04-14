@@ -5,6 +5,26 @@
     var empleados = ViewBag.Empleados as IEnumerable<ExcelResourceManager.Core.Models.Empleado> ?? Enumerable.Empty<ExcelResourceManager.Core.Models.Empleado>();
 }
 
+<style>
+    #tablaVacaciones thead th.sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    #tablaVacaciones thead th.sortable:hover {
+        background-color: rgba(0,0,0,.08);
+    }
+    #tablaVacaciones thead th .sort-icon {
+        margin-left: 4px;
+        opacity: 0.4;
+        font-size: .8em;
+    }
+    #tablaVacaciones thead th.asc .sort-icon,
+    #tablaVacaciones thead th.desc .sort-icon {
+        opacity: 1;
+    }
+</style>
+
 <div class="row">
     <div class="col-12">
         <h2>Gestión de Vacaciones</h2>
@@ -82,17 +102,26 @@
         </div>
 
         <div class="card">
+            <div class="card-header d-flex align-items-center gap-3">
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="ocultarVencidas" checked>
+                    <label class="form-check-label fw-semibold" for="ocultarVencidas">
+                        Ocultar vacaciones vencidas
+                    </label>
+                </div>
+                <small class="text-muted" id="contadorVacaciones"></small>
+            </div>
             <div class="card-body">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped table-hover" id="tablaVacaciones">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Empleado</th>
-                            <th>Email</th>
-                            <th>Fecha Inicio</th>
-                            <th>Fecha Fin</th>
-                            <th>Días</th>
-                            <th>Estado</th>
+                            <th class="sortable" data-col="0">ID <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="1">Empleado <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="2">Email <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="3">Fecha Inicio <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="4">Fecha Fin <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="5">Días <span class="sort-icon">⇅</span></th>
+                            <th class="sortable" data-col="6">Estado <span class="sort-icon">⇅</span></th>
                             <th>Conflictos</th>
                             <th>Acciones</th>
                         </tr>
@@ -100,13 +129,13 @@
                     <tbody>
                         @foreach (var vacacion in Model)
                         {
-                            <tr>
-                                <td>@vacacion.Id</td>
+                            <tr data-fecha-fin="@vacacion.FechaFin.ToString("yyyy-MM-dd")">
+                                <td data-sort="@vacacion.Id">@vacacion.Id</td>
                                 <td>@vacacion.EmpleadoNombre</td>
                                 <td>@vacacion.EmpleadoEmail</td>
-                                <td>@vacacion.FechaInicio.ToString("dd/MM/yyyy")</td>
-                                <td>@vacacion.FechaFin.ToString("dd/MM/yyyy")</td>
-                                <td>@vacacion.DiasHabiles</td>
+                                <td data-sort="@vacacion.FechaInicio.ToString("yyyy-MM-dd")">@vacacion.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                <td data-sort="@vacacion.FechaFin.ToString("yyyy-MM-dd")">@vacacion.FechaFin.ToString("dd/MM/yyyy")</td>
+                                <td data-sort="@vacacion.DiasHabiles">@vacacion.DiasHabiles</td>
                                 <td>
                                     @switch (vacacion.Estado)
                                     {
@@ -162,3 +191,80 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+<script>
+(function () {
+    const table = document.getElementById('tablaVacaciones');
+    const tbody = table.querySelector('tbody');
+    const toggle = document.getElementById('ocultarVencidas');
+    const counter = document.getElementById('contadorVacaciones');
+    const today = new Date().toISOString().slice(0, 10);
+
+    let sortCol = -1;
+    let sortDir = 'asc';
+
+    // --- Filter ---
+    function applyFilter() {
+        const ocultar = toggle.checked;
+        let visible = 0;
+        Array.from(tbody.rows).forEach(row => {
+            const fechaFin = row.dataset.fechaFin;
+            const vencida = fechaFin < today;
+            const hide = ocultar && vencida;
+            row.style.display = hide ? 'none' : '';
+            if (!hide) visible++;
+        });
+        counter.textContent = `Mostrando ${visible} de ${tbody.rows.length} vacaciones`;
+    }
+
+    // --- Sort ---
+    function sortTable(colIndex) {
+        const headers = table.querySelectorAll('thead th.sortable');
+        if (sortCol === colIndex) {
+            sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortCol = colIndex;
+            sortDir = 'asc';
+        }
+
+        headers.forEach(h => {
+            h.classList.remove('asc', 'desc');
+            h.querySelector('.sort-icon').textContent = '⇅';
+        });
+        const activeHeader = table.querySelector(`thead th.sortable[data-col="${colIndex}"]`);
+        activeHeader.classList.add(sortDir);
+        activeHeader.querySelector('.sort-icon').textContent = sortDir === 'asc' ? '↑' : '↓';
+
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+            const cellA = a.cells[colIndex];
+            const cellB = b.cells[colIndex];
+            const valA = (cellA.dataset.sort ?? cellA.textContent).trim();
+            const valB = (cellB.dataset.sort ?? cellB.textContent).trim();
+            const numA = parseFloat(valA);
+            const numB = parseFloat(valB);
+            let cmp;
+            if (!isNaN(numA) && !isNaN(numB)) {
+                cmp = numA - numB;
+            } else {
+                cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+            }
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+        applyFilter();
+    }
+
+    table.querySelectorAll('thead th.sortable').forEach(th => {
+        th.addEventListener('click', () => sortTable(parseInt(th.dataset.col)));
+    });
+
+    toggle.addEventListener('change', applyFilter);
+
+    // Default: sort by Fecha Inicio ascending (col 3)
+    sortTable(3);
+})();
+</script>
+}
+
