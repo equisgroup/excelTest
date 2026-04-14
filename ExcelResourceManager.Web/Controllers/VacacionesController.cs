@@ -83,7 +83,6 @@ public class VacacionesController : Controller
             if (ModelState.IsValid)
             {
                 vacacion.Estado = ExcelResourceManager.Core.Enums.EstadoVacacion.Solicitada;
-                vacacion.DiasHabiles = (int)(vacacion.FechaFin.Date - vacacion.FechaInicio.Date).TotalDays + 1;
                 
                 // Validar conflictos (solo para mostrar advertencia, no se guardan)
                 var conflictos = await _validationService.ValidarVacacionAsync(vacacion);
