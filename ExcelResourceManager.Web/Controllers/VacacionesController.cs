@@ -1,6 +1,7 @@
 using ExcelResourceManager.Core.Services;
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Repositories;
+using ExcelResourceManager.Reports;
 using ExcelResourceManager.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,7 @@ public class VacacionesController : Controller
     private readonly IEmpleadoService _empleadoService;
     private readonly IValidationService _validationService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IExcelImportExportService _excelService;
     private readonly ILogger<VacacionesController> _logger;
 
     public VacacionesController(
@@ -19,12 +21,14 @@ public class VacacionesController : Controller
         IEmpleadoService empleadoService,
         IValidationService validationService,
         IUnitOfWork unitOfWork,
+        IExcelImportExportService excelService,
         ILogger<VacacionesController> logger)
     {
         _vacacionService = vacacionService;
         _empleadoService = empleadoService;
         _validationService = validationService;
         _unitOfWork = unitOfWork;
+        _excelService = excelService;
         _logger = logger;
     }
 
@@ -190,5 +194,97 @@ public class VacacionesController : Controller
             return RedirectToAction("Details", "Empleados", new { id = empleadoId.Value });
 
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportarExcel()
+    {
+        try
+        {
+            var vacaciones = await _vacacionService.ObtenerTodasAsync();
+            var empleados = await _empleadoService.ObtenerTodosAsync();
+            var bytes = _excelService.ExportarVacaciones(vacaciones, empleados);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Vacaciones_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar vacaciones");
+            TempData["Error"] = "Error al exportar vacaciones";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ImportarExcel()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportarExcel(IFormFile archivo)
+    {
+        if (archivo == null || archivo.Length == 0)
+        {
+            TempData["Error"] = "Debe seleccionar un archivo Excel válido";
+            return View();
+        }
+
+        try
+        {
+            var empleados = await _empleadoService.ObtenerTodosAsync();
+            var existentes = await _vacacionService.ObtenerTodasAsync();
+
+            using var stream = archivo.OpenReadStream();
+            var result = await _excelService.ImportarVacacionesAsync(stream, empleados, existentes, async v =>
+            {
+                var conflictos = await _validationService.ValidarVacacionAsync(v);
+                v.TieneConflictos = conflictos.Any();
+                await _vacacionService.CrearAsync(v);
+            });
+
+            result.ReturnUrl = Url.Action(nameof(Index)) ?? "/Vacaciones";
+            TempData["ImportResult"] = System.Text.Json.JsonSerializer.Serialize(result);
+            return RedirectToAction(nameof(ResultadoImportacion));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al importar vacaciones");
+            TempData["Error"] = "Error al procesar el archivo de importación";
+            return View();
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ResultadoImportacion()
+    {
+        var json = TempData["ImportResult"] as string;
+        if (string.IsNullOrEmpty(json))
+            return RedirectToAction(nameof(Index));
+
+        var result = System.Text.Json.JsonSerializer.Deserialize<ExcelResourceManager.Reports.ImportResult>(json);
+        if (result == null)
+            return RedirectToAction(nameof(Index));
+
+        TempData.Keep("ImportResult");
+        return View("ImportResult", result);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExportarErrores(string erroresJson, string entidad)
+    {
+        try
+        {
+            var errores = System.Text.Json.JsonSerializer.Deserialize<List<ExcelResourceManager.Reports.ImportError>>(erroresJson) ?? new();
+            var bytes = _excelService.ExportarErroresImportacion(errores, entidad);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Errores_{entidad}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar errores de importación");
+            TempData["Error"] = "Error al exportar los errores";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

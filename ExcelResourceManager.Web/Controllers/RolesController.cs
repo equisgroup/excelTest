@@ -1,5 +1,6 @@
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Repositories;
+using ExcelResourceManager.Reports;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExcelResourceManager.Web.Controllers;
@@ -7,11 +8,13 @@ namespace ExcelResourceManager.Web.Controllers;
 public class RolesController : Controller
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IExcelImportExportService _excelService;
     private readonly ILogger<RolesController> _logger;
 
-    public RolesController(IUnitOfWork unitOfWork, ILogger<RolesController> logger)
+    public RolesController(IUnitOfWork unitOfWork, IExcelImportExportService excelService, ILogger<RolesController> logger)
     {
         _unitOfWork = unitOfWork;
+        _excelService = excelService;
         _logger = logger;
     }
 
@@ -141,5 +144,94 @@ public class RolesController : Controller
             TempData["Error"] = "Error al eliminar el rol";
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportarExcel()
+    {
+        try
+        {
+            var roles = await _unitOfWork.Roles.GetAllAsync();
+            var bytes = _excelService.ExportarRoles(roles);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Roles_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar roles");
+            TempData["Error"] = "Error al exportar roles";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ImportarExcel()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportarExcel(IFormFile archivo)
+    {
+        if (archivo == null || archivo.Length == 0)
+        {
+            TempData["Error"] = "Debe seleccionar un archivo Excel válido";
+            return View();
+        }
+
+        try
+        {
+            var existentes = await _unitOfWork.Roles.GetAllAsync();
+
+            using var stream = archivo.OpenReadStream();
+            var result = await _excelService.ImportarRolesAsync(stream, existentes, async r =>
+            {
+                await _unitOfWork.Roles.InsertAsync(r);
+                await _unitOfWork.CommitAsync();
+            });
+
+            result.ReturnUrl = Url.Action(nameof(Index)) ?? "/Roles";
+            TempData["ImportResult"] = System.Text.Json.JsonSerializer.Serialize(result);
+            return RedirectToAction(nameof(ResultadoImportacion));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al importar roles");
+            TempData["Error"] = "Error al procesar el archivo de importación";
+            return View();
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ResultadoImportacion()
+    {
+        var json = TempData["ImportResult"] as string;
+        if (string.IsNullOrEmpty(json))
+            return RedirectToAction(nameof(Index));
+
+        var result = System.Text.Json.JsonSerializer.Deserialize<ExcelResourceManager.Reports.ImportResult>(json);
+        if (result == null)
+            return RedirectToAction(nameof(Index));
+
+        TempData.Keep("ImportResult");
+        return View("ImportResult", result);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExportarErrores(string erroresJson, string entidad)
+    {
+        try
+        {
+            var errores = System.Text.Json.JsonSerializer.Deserialize<List<ExcelResourceManager.Reports.ImportError>>(erroresJson) ?? new();
+            var bytes = _excelService.ExportarErroresImportacion(errores, entidad);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Errores_{entidad}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar errores de importación");
+            TempData["Error"] = "Error al exportar los errores";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

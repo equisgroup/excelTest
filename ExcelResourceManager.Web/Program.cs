@@ -44,6 +44,7 @@ builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<ITurnoSoporteService, TurnoSoporteService>();
 builder.Services.AddScoped<ExcelResourceManager.Reports.IReportService, ExcelResourceManager.Reports.Generators.ConflictosReportGenerator>();
+builder.Services.AddScoped<ExcelResourceManager.Reports.IExcelImportExportService, ExcelResourceManager.Reports.ExcelImportExportService>();
 
 // Add MVC services
 builder.Services.AddControllersWithViews();

@@ -1,5 +1,6 @@
 using ExcelResourceManager.Core.Models;
 using ExcelResourceManager.Core.Services;
+using ExcelResourceManager.Reports;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ExcelResourceManager.Web.Controllers;
@@ -7,11 +8,13 @@ namespace ExcelResourceManager.Web.Controllers;
 public class UbicacionesController : Controller
 {
     private readonly IUbicacionService _ubicacionService;
+    private readonly IExcelImportExportService _excelService;
     private readonly ILogger<UbicacionesController> _logger;
 
-    public UbicacionesController(IUbicacionService ubicacionService, ILogger<UbicacionesController> logger)
+    public UbicacionesController(IUbicacionService ubicacionService, IExcelImportExportService excelService, ILogger<UbicacionesController> logger)
     {
         _ubicacionService = ubicacionService;
+        _excelService = excelService;
         _logger = logger;
     }
 
@@ -130,5 +133,93 @@ public class UbicacionesController : Controller
             TempData["Error"] = "Error al eliminar la ubicación";
         }
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportarExcel()
+    {
+        try
+        {
+            var ubicaciones = await _ubicacionService.ObtenerTodasAsync();
+            var bytes = _excelService.ExportarUbicaciones(ubicaciones);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Ubicaciones_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar ubicaciones");
+            TempData["Error"] = "Error al exportar ubicaciones";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ImportarExcel()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ImportarExcel(IFormFile archivo)
+    {
+        if (archivo == null || archivo.Length == 0)
+        {
+            TempData["Error"] = "Debe seleccionar un archivo Excel válido";
+            return View();
+        }
+
+        try
+        {
+            var existentes = await _ubicacionService.ObtenerTodasAsync();
+
+            using var stream = archivo.OpenReadStream();
+            var result = await _excelService.ImportarUbicacionesAsync(stream, existentes, async u =>
+            {
+                await _ubicacionService.AgregarUbicacionAsync(u);
+            });
+
+            result.ReturnUrl = Url.Action(nameof(Index)) ?? "/Ubicaciones";
+            TempData["ImportResult"] = System.Text.Json.JsonSerializer.Serialize(result);
+            return RedirectToAction(nameof(ResultadoImportacion));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al importar ubicaciones");
+            TempData["Error"] = "Error al procesar el archivo de importación";
+            return View();
+        }
+    }
+
+    [HttpGet]
+    public IActionResult ResultadoImportacion()
+    {
+        var json = TempData["ImportResult"] as string;
+        if (string.IsNullOrEmpty(json))
+            return RedirectToAction(nameof(Index));
+
+        var result = System.Text.Json.JsonSerializer.Deserialize<ExcelResourceManager.Reports.ImportResult>(json);
+        if (result == null)
+            return RedirectToAction(nameof(Index));
+
+        TempData.Keep("ImportResult");
+        return View("ImportResult", result);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ExportarErrores(string erroresJson, string entidad)
+    {
+        try
+        {
+            var errores = System.Text.Json.JsonSerializer.Deserialize<List<ExcelResourceManager.Reports.ImportError>>(erroresJson) ?? new();
+            var bytes = _excelService.ExportarErroresImportacion(errores, entidad);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Errores_{entidad}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al exportar errores de importación");
+            TempData["Error"] = "Error al exportar los errores";
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
