@@ -236,19 +236,24 @@
         activeHeader.classList.add(sortDir);
         activeHeader.querySelector('.sort-icon').textContent = sortDir === 'asc' ? '↑' : '↓';
 
+        const dateRe = /^\d{4}-\d{2}-\d{2}$/;
         const rows = Array.from(tbody.rows);
         rows.sort((a, b) => {
             const cellA = a.cells[colIndex];
             const cellB = b.cells[colIndex];
             const valA = (cellA.dataset.sort ?? cellA.textContent).trim();
             const valB = (cellB.dataset.sort ?? cellB.textContent).trim();
-            const numA = parseFloat(valA);
-            const numB = parseFloat(valB);
             let cmp;
-            if (!isNaN(numA) && !isNaN(numB)) {
-                cmp = numA - numB;
+            if (dateRe.test(valA) && dateRe.test(valB)) {
+                cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
             } else {
-                cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+                const numA = parseFloat(valA);
+                const numB = parseFloat(valB);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    cmp = numA - numB;
+                } else {
+                    cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+                }
             }
             return sortDir === 'asc' ? cmp : -cmp;
         });
